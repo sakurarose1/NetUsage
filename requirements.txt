@@ -1,0 +1,5 @@
+# Libraries NetUsage needs to read Windows' usage database (ESE format).
+# Install.bat installs them into lib\ automatically; the release zip already contains them.
+dissect.esedb==3.18
+dissect.util==3.24
+dissect.cstruct==4.7

@@ -1,0 +1,591 @@
+<!doctype html>
+<!--
+SPDX-License-Identifier: AGPL-3.0-or-later
+
+NetUsage - monthly download/upload history for Windows
+Copyright (C) 2026 Sakura (https://github.com/sakurarose1)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Usage</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f3f3f1;
+  --surface: #fcfcfb;
+  --surface-2: #f0efec;
+  --border: #e2e1dc;
+  --text: #0b0b0b;
+  --text-2: #52514e;
+  --text-3: #75746f;
+  --grid: #e7e6e1;
+  --down: #2a78d6;
+  --up: #eb6834;
+  --accent: #2a78d6;
+  --warn-bg: #fff4d6;
+  --warn-text: #6b4a00;
+  --shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #121211;
+    --surface: #1a1a19;
+    --surface-2: #232321;
+    --border: #2e2e2b;
+    --text: #ffffff;
+    --text-2: #c3c2b7;
+    --text-3: #9a998f;
+    --grid: #2a2a27;
+    --down: #3987e5;
+    --up: #d95926;
+    --accent: #5598e7;
+    --warn-bg: #3a2f12;
+    --warn-text: #f3d48a;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121211; --surface: #1a1a19; --surface-2: #232321; --border: #2e2e2b;
+  --text: #ffffff; --text-2: #c3c2b7; --text-3: #9a998f; --grid: #2a2a27;
+  --down: #3987e5; --up: #d95926; --accent: #5598e7;
+  --warn-bg: #3a2f12; --warn-text: #f3d48a; --shadow: none;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 14px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding: 28px 24px 48px; }
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+h1 { font: 600 28px/1.2 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; margin: 0 0 4px; letter-spacing: -.01em; }
+.sub { color: var(--text-2); font-size: 13px; }
+.sub b { color: var(--text); font-weight: 600; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+button, select, input[type=search] {
+  font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 10px; min-height: 34px;
+}
+button { cursor: pointer; }
+button:hover:not(:disabled), select:hover { background: var(--surface-2); }
+button:disabled { opacity: .4; cursor: default; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.nav-btn { width: 34px; padding: 0; font-size: 18px; line-height: 1; }
+#period { min-width: 210px; font-weight: 600; }
+.cycle { color: var(--text-2); font-size: 13px; display: flex; align-items: center; gap: 6px; margin-left: 8px; }
+
+.banner { background: var(--warn-bg); color: var(--warn-text); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; }
+.banner:empty { display: none; }
+
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; box-shadow: var(--shadow); }
+.tile .label { display: flex; align-items: center; gap: 8px; color: var(--text-2); font-size: 13px; font-weight: 600; }
+.swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex: none; }
+.tile .value { font: 600 34px/1.15 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; margin: 6px 0 4px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.tile .value small { font-size: 18px; font-weight: 600; color: var(--text-2); margin-left: 4px; }
+.tile .note { color: var(--text-3); font-size: 12.5px; min-height: 18px; }
+.tile.total { background: var(--surface-2); }
+
+h2 { font-size: 15px; font-weight: 600; margin: 0; }
+.card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.legend { display: flex; gap: 16px; color: var(--text-2); font-size: 12.5px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+#chart { position: relative; }
+#chart svg { display: block; width: 100%; height: 240px; overflow: visible; }
+#chart .axis text { fill: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+#chart .gridline { stroke: var(--grid); stroke-width: 1; }
+#chart .baseline { stroke: var(--text-3); stroke-width: 1; }
+#chart .hit { fill: transparent; cursor: default; }
+#chart .hit:hover, #chart .hit.on { fill: var(--surface-2); }
+#chart .untracked { fill: var(--surface-2); }
+#chart path, #chart .untracked, #chart .axis, #chart .baseline { pointer-events: none; }
+.tip {
+  position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  white-space: nowrap; z-index: 5; display: none;
+}
+.tip .t { font-weight: 600; margin-bottom: 4px; }
+.tip .r { display: flex; align-items: center; gap: 6px; color: var(--text-2); }
+.tip .r b { color: var(--text); font-weight: 600; margin-left: auto; padding-left: 14px; font-variant-numeric: tabular-nums; }
+
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 12px; margin-top: 12px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { text-align: right; font-size: 12px; font-weight: 600; color: var(--text-2); padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; padding-left: 0; }
+th:last-child, td:last-child { padding-right: 0; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--text); }
+th.sorted { color: var(--text); }
+th.sorted::after { content: " ↓"; }
+td { text-align: right; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+.appname { font-weight: 600; white-space: normal; }
+.appdetail { color: var(--text-3); font-size: 12px; overflow: hidden; text-overflow: ellipsis; max-width: 360px; white-space: nowrap; }
+.bar { display: flex; gap: 2px; height: 6px; margin-top: 5px; max-width: 360px; }
+.bar i { display: block; height: 100%; border-radius: 3px; min-width: 0; }
+.bar i.d { background: var(--down); }
+.bar i.u { background: var(--up); }
+.muted { color: var(--text-3); }
+.scroll { overflow-x: auto; }
+.split { display: none; color: var(--text-3); font-size: 12px; margin-top: 2px; }
+.tools { display: flex; gap: 8px; align-items: center; }
+input[type=search] { width: 180px; }
+.more { margin-top: 10px; width: 100%; }
+
+.net { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: start; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.net:last-child { border-bottom: none; }
+.net input { margin: 3px 0 0; width: 16px; height: 16px; accent-color: var(--accent); }
+.net .nm { font-weight: 600; word-break: break-word; }
+.net .kd { color: var(--text-3); font-size: 12px; }
+.net .amt { text-align: right; font-variant-numeric: tabular-nums; }
+.net .amt div:last-child { color: var(--text-3); font-size: 12px; }
+.net.off .nm, .net.off .amt { opacity: .45; }
+.hint { color: var(--text-3); font-size: 12.5px; margin: 10px 0 0; }
+
+#history tr { cursor: pointer; }
+#history tr:hover td { background: var(--surface-2); }
+#history tr.sel td { background: var(--surface-2); font-weight: 600; }
+#history td .bar { margin-top: 0; max-width: none; width: 100%; }
+#history td.barcell { width: 38%; }
+.tag { font-size: 11px; color: var(--text-3); font-weight: 400; margin-left: 6px; }
+
+footer { margin-top: 20px; color: var(--text-3); font-size: 12.5px; line-height: 1.6; }
+footer a { color: var(--accent); }
+footer code { font-family: Consolas, ui-monospace, monospace; font-size: 12px; }
+.empty { color: var(--text-3); padding: 16px 0; text-align: center; }
+
+@media (max-width: 860px) {
+  .grid2 { grid-template-columns: 1fr; }
+  .tiles { grid-template-columns: 1fr 1fr; }
+  .tile.total { grid-column: 1 / -1; }
+}
+@media (max-width: 520px) {
+  .wrap { padding: 20px 16px 40px; }
+  .tiles { grid-template-columns: 1fr; }
+  .tile .value { font-size: 28px; }
+  #period { min-width: 0; flex: 1; }
+  .cycle { margin-left: 0; }
+  input[type=search] { width: 130px; }
+  #history td.barcell { display: none; }
+  .controls { width: 100%; }
+  #period { min-width: 150px; }
+  .apps-t th:nth-child(2), .apps-t th:nth-child(3), .apps-t td:nth-child(2), .apps-t td:nth-child(3) { display: none; }
+  .split { display: block; }
+  .appdetail { max-width: 220px; }
+  td { padding: 8px 6px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Data usage</h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <div class="controls">
+      <button class="nav-btn" id="prev" aria-label="Previous period">‹</button>
+      <select id="period" aria-label="Period"></select>
+      <button class="nav-btn" id="next" aria-label="Next period">›</button>
+      <label class="cycle">Month starts on day
+        <select id="startDay" aria-label="Day the month starts"></select>
+      </label>
+    </div>
+  </header>
+
+  <div class="banner" id="banner"></div>
+
+  <section class="tiles">
+    <div class="card tile"><div class="label"><span class="swatch" style="background:var(--down)"></span>Download</div><div class="value" id="vDown"></div><div class="note" id="nDown"></div></div>
+    <div class="card tile"><div class="label"><span class="swatch" style="background:var(--up)"></span>Upload</div><div class="value" id="vUp"></div><div class="note" id="nUp"></div></div>
+    <div class="card tile total"><div class="label">Total (download + upload)</div><div class="value" id="vTot"></div><div class="note" id="nTot"></div></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Day by day</h2>
+      <div class="legend"><span><i class="swatch" style="background:var(--down)"></i>Download</span><span><i class="swatch" style="background:var(--up)"></i>Upload</span></div>
+    </div>
+    <div id="chart"><div class="tip" id="tip"></div></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <div class="card-head">
+        <h2>Apps</h2>
+        <div class="tools"><input type="search" id="q" placeholder="Find an app" aria-label="Find an app"></div>
+      </div>
+      <div class="scroll"><table class="apps-t">
+        <thead><tr>
+          <th>App</th>
+          <th class="sortable" data-k="recv">Download</th>
+          <th class="sortable" data-k="sent">Upload</th>
+          <th class="sortable" data-k="tot">Total</th>
+        </tr></thead>
+        <tbody id="apps"></tbody>
+      </table></div>
+      <button class="more" id="more"></button>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>Networks</h2></div>
+      <div id="nets"></div>
+      <p class="hint">Every network is counted together in the totals. Untick one to leave it out — VPN and virtual adapters start unticked, because their traffic already passes through your Wi-Fi and would be counted twice.</p>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:12px">
+    <div class="card-head"><h2>Month by month</h2><span class="muted" style="font-size:12.5px">Click a row to open it</span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Period</th><th>Download</th><th>Upload</th><th>Total</th><th></th></tr></thead>
+      <tbody id="history"></tbody>
+    </table></div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+// @license magnet:?xt=urn:btih:0b31508aeb0634b347b8270c7bee4d411b5d4109&dn=agpl-3.0.txt AGPL-3.0-or-later
+const DATA = /*__DATA__*/null;
+
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem("netusage." + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem("netusage." + k, JSON.stringify(v)); } catch (e) {} }
+  };
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  // ---- units: 1 GB = 1024^3 bytes, the same as Windows Settings
+  const K = 1024, MB = K * K, GB = MB * K, TB = GB * K;
+  function fmt(b, parts) {
+    let v, u;
+    if (b >= TB) { v = b / TB; u = "TB"; }
+    else if (b >= GB) { v = b / GB; u = "GB"; }
+    else if (b >= MB) { v = b / MB; u = "MB"; }
+    else if (b >= K) { v = b / K; u = "KB"; }
+    else { v = b; u = "B"; }
+    const n = u === "B" ? String(Math.round(v)) : v >= 100 ? v.toFixed(1) : v.toFixed(2);
+    return parts ? [n, u] : n + " " + u;
+  }
+
+  // ---- dates are plain "YYYY-MM-DD" strings in local time; math is done in UTC to dodge DST
+  const toD = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+  const toS = (d) => d.toISOString().slice(0, 10);
+  const addDays = (s, n) => { const d = toD(s); d.setUTCDate(d.getUTCDate() + n); return toS(d); };
+  const now = new Date();
+  const TODAY = toS(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())));
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const MONTHS_LONG = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const nice = (s, withYear) => { const d = toD(s); return d.getUTCDate() + " " + MONTHS[d.getUTCMonth()] + (withYear ? " " + d.getUTCFullYear() : ""); };
+  const daysBetween = (a, b) => Math.round((toD(b) - toD(a)) / 86400000) + 1;
+
+  if (!DATA) { document.body.innerHTML = "<p style='padding:24px'>No data embedded in this page.</p>"; return; }
+
+  const days = DATA.days, apps = DATA.apps, nets = DATA.nets, rows = DATA.rows;
+  const firstDay = days.length ? days[0] : TODAY;
+
+  // ---- state
+  let startDay = Math.min(28, Math.max(1, store.get("startDay", 1)));
+  const netOn = nets.map((n) => { const v = store.get("net." + n.key, null); return v === null ? n.default : !!v; });
+  let sortKey = store.get("sort", "tot");
+  let showAll = false;
+  let periods = [], current = 0;
+
+  // period containing a date, given the cycle start day
+  function periodFor(s) {
+    const d = toD(s);
+    let y = d.getUTCFullYear(), m = d.getUTCMonth();
+    if (d.getUTCDate() < startDay) { m -= 1; if (m < 0) { m = 11; y -= 1; } }
+    const from = toS(new Date(Date.UTC(y, m, startDay)));
+    const to = toS(new Date(Date.UTC(y, m + 1, startDay - 1)));
+    const label = startDay === 1 ? MONTHS_LONG[m] + " " + y
+      : nice(from, toD(from).getUTCFullYear() !== toD(to).getUTCFullYear()) + " – " + nice(to, true);
+    return { from, to, label, key: from };
+  }
+  function buildPeriods() {
+    const list = [];
+    let p = periodFor(firstDay < TODAY ? firstDay : TODAY);
+    const last = periodFor(TODAY);
+    for (let guard = 0; guard < 600; guard++) {
+      list.push(p);
+      if (p.from === last.from) break;
+      p = periodFor(addDays(p.to, 1));
+    }
+    list.reverse();                                            // newest first
+    list.push({ from: addDays(TODAY, -29), to: TODAY, label: "Last 30 days", key: "last30", rolling: true });
+    return list;
+  }
+
+  // ---- aggregation over the enabled networks
+  function aggregate(from, to) {
+    const perDay = new Map(), perApp = new Map(), perNet = new Map();
+    let recv = 0, sent = 0;
+    for (const r of rows) {
+      const day = days[r[0]];
+      if (day < from || day > to) continue;
+      const n = r[2];
+      const pn = perNet.get(n) || [0, 0]; pn[0] += r[3]; pn[1] += r[4]; perNet.set(n, pn);
+      if (!netOn[n]) continue;
+      recv += r[3]; sent += r[4];
+      const pd = perDay.get(day) || [0, 0]; pd[0] += r[3]; pd[1] += r[4]; perDay.set(day, pd);
+      // merge apps that share a display name (e.g. old and new versions of the same Store app)
+      const nm = apps[r[1]][0];
+      const pa = perApp.get(nm) || { name: nm, detail: new Set(), kind: apps[r[1]][2], recv: 0, sent: 0 };
+      pa.recv += r[3]; pa.sent += r[4]; pa.detail.add(apps[r[1]][1]); perApp.set(nm, pa);
+    }
+    return { recv, sent, perDay, perApp, perNet };
+  }
+  function totalsOnly(from, to) {
+    let recv = 0, sent = 0;
+    for (const r of rows) {
+      const day = days[r[0]];
+      if (day < from || day > to || !netOn[r[2]]) continue;
+      recv += r[3]; sent += r[4];
+    }
+    return { recv, sent };
+  }
+
+  // ---- header + banner + footer
+  function renderMeta() {
+    const lc = DATA.lastCollect;
+    const upd = DATA.lastRecord ? DATA.lastRecord.replace("T", " ") : "—";
+    $("sub").innerHTML = "All networks combined · Windows' newest figures: <b>" + esc(upd) + "</b>" +
+      (DATA.generated ? " · page built " + esc(DATA.generated.replace("T", " ")) : "");
+    const msgs = [];
+    if (lc && !lc.ok) msgs.push("The last hourly update failed (" + esc(lc.error || "unknown error") + "). Details are in collector.log.");
+    if (DATA.generated) {
+      const age = (Date.now() - new Date(DATA.generated).getTime()) / 3600000;
+      if (age > 3) msgs.push("This page was last rebuilt " + Math.round(age) + " hours ago — the background task may not be running.");
+    }
+    $("banner").innerHTML = msgs.join("<br>");
+    $("foot").innerHTML =
+      "Figures come from Windows' own hourly network log (the same source as Settings → Data usage), copied every hour into a permanent history, so nothing rolls off after 30 days. " +
+      "Windows writes the log about once an hour, so the most recent hour may not be in yet. 1 GB = 1024³ bytes, as in Windows Settings.<br>" +
+      "History recorded from <b>" + esc(firstDay ? nice(firstDay, true) : "—") + "</b>. Files: <code>" + esc(DATA.dataDir || "") + "</code> · NetUsage " + esc(DATA.version || "") + "<br>" +
+      "Free software under the <a href='https://www.gnu.org/licenses/agpl-3.0.html'>GNU AGPL v3 or later</a>, with no warranty. " +
+      "Source code: <a href='" + esc(DATA.sourceUrl || "https://github.com/sakurarose1/NetUsage") + "'>" + esc((DATA.sourceUrl || "https://github.com/sakurarose1/NetUsage").replace(/^https:\/\//, "")) + "</a>";
+  }
+
+  // ---- period controls
+  function fillControls() {
+    const sd = $("startDay");
+    sd.innerHTML = Array.from({ length: 28 }, (_, i) => "<option value='" + (i + 1) + "'>" + (i + 1) + "</option>").join("");
+    sd.value = String(startDay);
+    sd.onchange = () => { startDay = +sd.value; store.set("startDay", startDay); rebuildPeriods(); };
+    $("prev").onclick = () => { if (current < periods.length - 2) { current++; sync(); } else if (periods[current].rolling) { current = 0; sync(); } };
+    $("next").onclick = () => { if (!periods[current].rolling && current > 0) { current--; sync(); } };
+    $("period").onchange = () => { current = +$("period").value; sync(); };
+  }
+  function rebuildPeriods() {
+    const keepRolling = periods[current] && periods[current].rolling;
+    periods = buildPeriods();
+    current = keepRolling ? periods.length - 1 : 0;
+    $("period").innerHTML = periods.map((p, i) =>
+      (p.rolling ? "<option disabled>──────────</option>" : "") + "<option value='" + i + "'>" + esc(p.label) + "</option>").join("");
+    sync();
+  }
+  function sync() {
+    $("period").value = String(current);
+    const p = periods[current];
+    $("prev").disabled = !p.rolling && current >= periods.length - 2;
+    $("next").disabled = p.rolling || current === 0;
+    render();
+  }
+
+  // ---- main render
+  function render() {
+    const p = periods[current];
+    const agg = aggregate(p.from, p.to);
+    renderTiles(p, agg);
+    renderChart(p, agg);
+    renderApps(agg);
+    renderNets(agg);
+    renderHistory();
+  }
+
+  function setValue(id, b) { const [n, u] = fmt(b, true); $(id).innerHTML = esc(n) + "<small>" + u + "</small>"; }
+  function renderTiles(p, agg) {
+    setValue("vDown", agg.recv); setValue("vUp", agg.sent); setValue("vTot", agg.recv + agg.sent);
+    const from = p.from < firstDay ? firstDay : p.from;
+    const end = p.to > TODAY ? TODAY : p.to;
+    const elapsed = end >= from ? daysBetween(from, end) : 0;
+    const length = daysBetween(p.from, p.to);
+    const tot = agg.recv + agg.sent;
+    const avg = elapsed ? tot / elapsed : 0;
+    $("nDown").textContent = agg.recv + agg.sent ? Math.round(100 * agg.recv / tot) + "% of the total" : "";
+    $("nUp").textContent = agg.recv + agg.sent ? Math.round(100 * agg.sent / tot) + "% of the total" : "";
+    let note = elapsed ? "About " + fmt(avg) + " a day" : "No data for this period";
+    if (!p.rolling && p.to >= TODAY && p.from <= TODAY && elapsed && elapsed < length && from === p.from)
+      note += " · on pace for ~" + fmt(avg * length) + " by " + nice(p.to);
+    if (p.from < firstDay && p.to >= firstDay) note += " · recorded from " + nice(firstDay) + " only";
+    $("nTot").textContent = note;
+  }
+
+  // ---- daily stacked bars (download bottom, upload on top, 2px surface gap)
+  function niceMax(v) {
+    if (v <= 0) return GB;
+    const unit = v >= GB ? GB : v >= MB ? MB : K;
+    const x = v / unit, p10 = Math.pow(10, Math.floor(Math.log10(x)));
+    const step = [1, 2, 2.5, 5, 10].map((m) => m * p10).find((s) => x / s <= 4) || 10 * p10;
+    return Math.ceil(x / step) * step * unit;
+  }
+  function renderChart(p, agg) {
+    const host = $("chart"), tip = $("tip");
+    host.querySelectorAll("svg, .empty").forEach((n) => n.remove());
+    const list = [];
+    for (let s = p.from; s <= p.to; s = addDays(s, 1)) list.push(s);
+    const W = Math.max(320, host.clientWidth || 800), H = 240, padL = 52, padR = 4, padT = 8, padB = 24;
+    const iw = W - padL - padR, ih = H - padT - padB;
+    let max = 0;
+    list.forEach((d) => { const v = agg.perDay.get(d); if (v) max = Math.max(max, v[0] + v[1]); });
+    const top = niceMax(max);
+    const y = (b) => padT + ih - (b / top) * ih;
+    const slot = iw / list.length, bw = Math.max(2, Math.min(28, slot * 0.68));
+    const ns = "http://www.w3.org/2000/svg";
+    let svg = "<svg xmlns='" + ns + "' viewBox='0 0 " + W + " " + H + "' role='img' aria-label='Daily download and upload'>";
+    svg += "<g class='axis'>";
+    for (let i = 0; i <= 4; i++) {
+      const v = (top / 4) * i, yy = y(v);
+      if (i > 0) svg += "<line class='gridline' x1='" + padL + "' x2='" + (W - padR) + "' y1='" + yy + "' y2='" + yy + "'/>";
+      svg += "<text x='" + (padL - 8) + "' y='" + (yy + 4) + "' text-anchor='end'>" + (i === 0 ? "0" : esc(fmt(v))) + "</text>";
+    }
+    const every = list.length > 20 ? (W < 560 ? 7 : 3) : 1;
+    list.forEach((d, i) => {
+      const dd = toD(d).getUTCDate();
+      if (i % every === 0 || i === list.length - 1 && every === 1)
+        svg += "<text x='" + (padL + slot * i + slot / 2) + "' y='" + (H - 6) + "' text-anchor='middle'>" + (list.length > 31 ? esc(nice(d)) : dd) + "</text>";
+    });
+    svg += "</g>";
+    list.forEach((d, i) => {
+      const x = padL + slot * i;
+      if (d < firstDay || d > TODAY) {
+        svg += "<rect class='untracked' x='" + (x + 1) + "' y='" + padT + "' width='" + Math.max(0, slot - 2) + "' height='" + ih + "' rx='3' opacity='.5'/>";
+      }
+      svg += "<rect class='hit' data-i='" + i + "' x='" + x + "' y='" + padT + "' width='" + slot + "' height='" + ih + "' rx='4'/>";
+      const v = agg.perDay.get(d);
+      if (!v) return;
+      const bx = x + (slot - bw) / 2, r = Math.min(4, bw / 2);
+      const hd = (v[0] / top) * ih, hu = (v[1] / top) * ih;
+      const gap = hd > 0 && hu > 0 ? 2 : 0;
+      if (hd > 0) svg += barPath(bx, padT + ih - hd, bw, hd, hu > 0 ? 0 : r, "var(--down)");
+      if (hu > 0) svg += barPath(bx, padT + ih - hd - gap - hu, bw, hu, r, "var(--up)");
+    });
+    svg += "<line class='baseline' x1='" + padL + "' x2='" + (W - padR) + "' y1='" + (padT + ih) + "' y2='" + (padT + ih) + "'/>";
+    svg += "</svg>";
+    host.insertAdjacentHTML("afterbegin", svg);
+    const el = host.querySelector("svg");
+    el.querySelectorAll(".hit").forEach((h) => {
+      h.addEventListener("mousemove", (ev) => {
+        const i = +h.dataset.i, d = list[i], v = agg.perDay.get(d) || [0, 0];
+        const status = d > TODAY ? "Not yet" : d < firstDay ? "Before recording started" : null;
+        tip.innerHTML = "<div class='t'>" + esc(nice(d, true)) + "</div>" + (status ? "<div class='r'>" + status + "</div>" :
+          "<div class='r'><i class='swatch' style='background:var(--down)'></i>Download<b>" + fmt(v[0]) + "</b></div>" +
+          "<div class='r'><i class='swatch' style='background:var(--up)'></i>Upload<b>" + fmt(v[1]) + "</b></div>" +
+          "<div class='r'>Total<b>" + fmt(v[0] + v[1]) + "</b></div>");
+        const box = host.getBoundingClientRect();
+        tip.style.display = "block";
+        let left = ev.clientX - box.left + 14;
+        if (left + tip.offsetWidth > box.width) left = ev.clientX - box.left - tip.offsetWidth - 14;
+        tip.style.left = Math.max(0, left) + "px";
+        tip.style.top = Math.max(0, ev.clientY - box.top - tip.offsetHeight - 10) + "px";
+      });
+      h.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+    });
+  }
+  // rect with only the top corners rounded (anchored to the baseline)
+  function barPath(x, y, w, h, r, fill) {
+    r = Math.min(r, h, w / 2);
+    const d = "M" + x + "," + (y + h) + "V" + (y + r) + "Q" + x + "," + y + " " + (x + r) + "," + y +
+      "H" + (x + w - r) + "Q" + (x + w) + "," + y + " " + (x + w) + "," + (y + r) + "V" + (y + h) + "Z";
+    return "<path d='" + d + "' fill='" + fill + "'/>";
+  }
+
+  // ---- apps table
+  function renderApps(agg) {
+    const q = $("q").value.trim().toLowerCase();
+    let list = Array.from(agg.perApp.values()).map((a) => Object.assign(a, { tot: a.recv + a.sent }));
+    const maxTot = list.reduce((m, a) => Math.max(m, a.tot), 0) || 1;
+    if (q) list = list.filter((a) => (a.name + " " + Array.from(a.detail).join(" ")).toLowerCase().includes(q));
+    list.sort((a, b) => b[sortKey] - a[sortKey] || b.tot - a.tot);
+    document.querySelectorAll("th.sortable").forEach((th) => th.classList.toggle("sorted", th.dataset.k === sortKey));
+    const LIMIT = 15, shown = showAll || q ? list : list.slice(0, LIMIT);
+    $("apps").innerHTML = shown.length ? shown.map((a) => {
+      const detail = Array.from(a.detail).join(" · ");
+      const wd = (100 * a.recv / maxTot), wu = (100 * a.sent / maxTot);
+      return "<tr><td><div class='appname'>" + esc(a.name) + "</div><div class='appdetail' title='" + esc(detail) + "'>" + esc(detail) + "</div>" +
+        "<div class='split'>↓ " + fmt(a.recv) + " · ↑ " + fmt(a.sent) + "</div>" +
+        "<div class='bar'>" + (wd > 0 ? "<i class='d' style='width:" + wd.toFixed(2) + "%'></i>" : "") + (wu > 0 ? "<i class='u' style='width:" + wu.toFixed(2) + "%'></i>" : "") + "</div></td>" +
+        "<td>" + fmt(a.recv) + "</td><td>" + fmt(a.sent) + "</td><td><b>" + fmt(a.tot) + "</b></td></tr>";
+    }).join("") : "<tr><td colspan='4' class='empty'>" + (q ? "No app matches “" + esc(q) + "”." : "No traffic in this period.") + "</td></tr>";
+    const btn = $("more");
+    btn.style.display = !q && list.length > LIMIT ? "" : "none";
+    btn.textContent = showAll ? "Show top " + LIMIT + " only" : "Show all " + list.length + " apps";
+  }
+
+  // ---- networks list
+  function renderNets(agg) {
+    const order = nets.map((n, i) => i).filter((i) => agg.perNet.has(i) || netOn[i] !== nets[i].default)
+      .sort((a, b) => { const A = agg.perNet.get(a) || [0, 0], B = agg.perNet.get(b) || [0, 0]; return (B[0] + B[1]) - (A[0] + A[1]); });
+    $("nets").innerHTML = order.length ? order.map((i) => {
+      const n = nets[i], v = agg.perNet.get(i) || [0, 0];
+      const kind = n.kind + (n.alias && n.alias !== n.label && n.alias !== n.kind ? " · " + n.alias : "");
+      return "<label class='net" + (netOn[i] ? "" : " off") + "'><input type='checkbox' data-i='" + i + "'" + (netOn[i] ? " checked" : "") + ">" +
+        "<div><div class='nm'>" + esc(n.label) + "</div><div class='kd'>" + esc(kind) + "</div></div>" +
+        "<div class='amt'><div>" + fmt(v[0] + v[1]) + "</div><div>↓ " + fmt(v[0]) + " · ↑ " + fmt(v[1]) + "</div></div></label>";
+    }).join("") : "<div class='empty'>No traffic in this period.</div>";
+    $("nets").querySelectorAll("input").forEach((cb) => cb.onchange = () => {
+      const i = +cb.dataset.i; netOn[i] = cb.checked; store.set("net." + nets[i].key, cb.checked); render();
+    });
+  }
+
+  // ---- month-by-month history
+  function renderHistory() {
+    const list = periods.map((p, i) => ({ p, i })).filter((x) => !x.p.rolling && x.p.to >= firstDay);
+    const sums = list.map((x) => totalsOnly(x.p.from, x.p.to));
+    const max = sums.reduce((m, s) => Math.max(m, s.recv + s.sent), 0) || 1;
+    $("history").innerHTML = list.map((x, k) => {
+      const s = sums[k], tot = s.recv + s.sent;
+      const tag = x.p.from <= TODAY && x.p.to >= TODAY ? "<span class='tag'>so far</span>"
+        : x.p.from < firstDay ? "<span class='tag'>partly recorded</span>" : "";
+      return "<tr data-i='" + x.i + "' class='" + (x.i === current ? "sel" : "") + "'><td>" + esc(x.p.label) + tag + "</td><td>" + fmt(s.recv) + "</td><td>" + fmt(s.sent) + "</td><td><b>" + fmt(tot) + "</b></td>" +
+        "<td class='barcell'><div class='bar'>" + (s.recv ? "<i class='d' style='width:" + (100 * s.recv / max).toFixed(2) + "%'></i>" : "") + (s.sent ? "<i class='u' style='width:" + (100 * s.sent / max).toFixed(2) + "%'></i>" : "") + "</div></td></tr>";
+    }).join("") || "<tr><td colspan='5' class='empty'>Nothing recorded yet.</td></tr>";
+    $("history").querySelectorAll("tr[data-i]").forEach((tr) => tr.onclick = () => { current = +tr.dataset.i; sync(); window.scrollTo({ top: 0, behavior: "smooth" }); });
+  }
+
+  // ---- wire up
+  document.querySelectorAll("th.sortable").forEach((th) => th.onclick = () => { sortKey = th.dataset.k; store.set("sort", sortKey); render(); });
+  $("q").oninput = () => renderApps(aggregate(periods[current].from, periods[current].to));
+  $("more").onclick = () => { showAll = !showAll; renderApps(aggregate(periods[current].from, periods[current].to)); };
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { const p = periods[current]; renderChart(p, aggregate(p.from, p.to)); }, 120); });
+
+  renderMeta();
+  fillControls();
+  rebuildPeriods();
+})();
+// @license-end
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.sqlite
+collector.log
+dashboard.html
+*.zip
+.DS_Store
+Thumbs.db
+lib/
