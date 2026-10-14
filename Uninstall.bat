@@ -12,7 +12,7 @@ set "PY="
 where py >nul 2>&1 && set "PY=py -3"
 if not defined PY set "PY=python"
 
-echo This removes the hourly task and the desktop shortcut.
+echo This removes NetUsage's background tasks and its desktop and Start menu shortcuts.
 choice /c YN /m "Also delete ALL recorded history"
 if errorlevel 2 (
   %PY% "%~dp0netusage.py" uninstall

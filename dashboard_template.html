@@ -94,6 +94,47 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 
 .banner { background: var(--warn-bg); color: var(--warn-text); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; }
 .banner:empty { display: none; }
+.notice { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; background: var(--surface); border: 1px solid var(--border);
+  border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 13.5px; }
+.notice[hidden] { display: none; }
+.notice b { font-weight: 600; }
+.notice a.btn { margin-left: auto; background: var(--accent); color: #fff; text-decoration: none; border-radius: 6px; padding: 6px 12px; font-weight: 600; font-size: 13px; }
+.notice .x { margin-left: 0; min-height: 28px; padding: 2px 10px; font-size: 12.5px; }
+.alerts { list-style: none; margin: 0; padding: 0; flex: 1 1 100%; }
+.alerts li { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; padding: 3px 0; }
+.alerts .when { color: var(--text-3); font-size: 12px; white-space: nowrap; min-width: 96px; }
+.alerts .ttl { font-weight: 600; }
+.alerts .bd { color: var(--text-2); }
+
+.limit { margin-bottom: 12px; }
+.limit-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; margin-bottom: 10px; }
+.limit-head .big { font: 600 20px/1.2 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.limit-head .big small { font-size: 14px; color: var(--text-2); font-weight: 600; }
+.state { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text); }
+.state i { width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center; font-style: normal; font-size: 11px; color: #fff; }
+.state.good i { background: #0ca30c; } .state.warning i { background: #fab219; color: #1a1a19; } .state.critical i { background: #d03b3b; }
+.meter { position: relative; height: 12px; border-radius: 6px; background: var(--surface-2); overflow: hidden; }
+.meter .fill { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 6px; background: var(--down); }
+.meter .fill.warning { background: #fab219; } .meter .fill.critical { background: #d03b3b; }
+.meter .mark { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--text-3); opacity: .6; }
+.limit-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; margin-top: 8px; color: var(--text-2); font-size: 12.5px; }
+
+.apps-t tbody tr.app { cursor: pointer; }
+.apps-t tbody tr.app:hover td { background: var(--surface-2); }
+.apps-t tbody tr.app:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+dialog#appdlg { width: min(860px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 0; border: 1px solid var(--border);
+  border-radius: 12px; background: var(--bg); color: var(--text); box-shadow: 0 12px 48px rgba(0,0,0,.35); }
+dialog#appdlg::backdrop { background: rgba(0,0,0,.45); }
+.dlg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px 6px; }
+.dlg-head h2 { font-size: 18px; }
+.dlg-head .appdetail { max-width: none; white-space: normal; }
+.dlg-body { padding: 8px 20px 20px; }
+.dlg-body .card { margin-top: 10px; }
+.close { width: 34px; padding: 0; font-size: 20px; line-height: 1; flex: none; }
+.mini { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 6px; }
+.mini div { font-size: 12.5px; color: var(--text-2); }
+.mini b { display: block; font: 600 20px/1.2 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; color: var(--text); font-variant-numeric: tabular-nums; }
 
 .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; box-shadow: var(--shadow); }
@@ -109,15 +150,15 @@ h2 { font-size: 15px; font-weight: 600; margin: 0; }
 .legend { display: flex; gap: 16px; color: var(--text-2); font-size: 12.5px; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 
-#chart { position: relative; }
-#chart svg { display: block; width: 100%; height: 240px; overflow: visible; }
-#chart .axis text { fill: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; }
-#chart .gridline { stroke: var(--grid); stroke-width: 1; }
-#chart .baseline { stroke: var(--text-3); stroke-width: 1; }
-#chart .hit { fill: transparent; cursor: default; }
-#chart .hit:hover, #chart .hit.on { fill: var(--surface-2); }
-#chart .untracked { fill: var(--surface-2); }
-#chart path, #chart .untracked, #chart .axis, #chart .baseline { pointer-events: none; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart .axis text { fill: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart .gridline { stroke: var(--grid); stroke-width: 1; }
+.chart .baseline { stroke: var(--text-3); stroke-width: 1; }
+.chart .hit { fill: transparent; cursor: default; }
+.chart .hit:hover { fill: var(--surface-2); }
+.chart .untracked { fill: var(--surface-2); }
+.chart path, .chart .untracked, .chart .axis, .chart .baseline { pointer-events: none; }
 .tip {
   position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border);
   border-radius: 8px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 4px 16px rgba(0,0,0,.18);
@@ -213,6 +254,18 @@ footer code { font-family: Consolas, ui-monospace, monospace; font-size: 12px; }
   </header>
 
   <div class="banner" id="banner"></div>
+  <div class="notice" id="update" hidden></div>
+  <div class="notice" id="alerts" hidden></div>
+
+  <section class="card limit" id="limit" hidden>
+    <div class="limit-head">
+      <h2>Data limit</h2>
+      <span class="state" id="limitState"></span>
+    </div>
+    <div class="limit-head"><span class="big" id="limitBig"></span><span class="muted" id="limitLeft" style="font-size:13px"></span></div>
+    <div class="meter" role="meter" id="limitMeter" aria-label="Data limit used" aria-valuemin="0" aria-valuemax="100"><div class="fill" id="limitFill"></div><div class="mark" id="limitMark"></div></div>
+    <div class="limit-foot"><span id="limitCycle"></span><span id="limitPace"></span></div>
+  </section>
 
   <section class="tiles">
     <div class="card tile"><div class="label"><span class="swatch" style="background:var(--down)"></span>Download</div><div class="value" id="vDown"></div><div class="note" id="nDown"></div></div>
@@ -225,13 +278,13 @@ footer code { font-family: Consolas, ui-monospace, monospace; font-size: 12px; }
       <h2>Day by day</h2>
       <div class="legend"><span><i class="swatch" style="background:var(--down)"></i>Download</span><span><i class="swatch" style="background:var(--up)"></i>Upload</span></div>
     </div>
-    <div id="chart"><div class="tip" id="tip"></div></div>
+    <div id="chart" class="chart"><div class="tip" id="tip"></div></div>
   </section>
 
   <div class="grid2">
     <section class="card">
       <div class="card-head">
-        <h2>Apps</h2>
+        <h2>Apps <span class="muted" style="font-size:12.5px;font-weight:400">· click one for its history</span></h2>
         <div class="tools"><input type="search" id="q" placeholder="Find an app" aria-label="Find an app"></div>
       </div>
       <div class="scroll"><table class="apps-t">
@@ -263,6 +316,25 @@ footer code { font-family: Consolas, ui-monospace, monospace; font-size: 12px; }
 
   <footer id="foot"></footer>
 </div>
+
+<dialog id="appdlg" aria-labelledby="dlgTitle">
+  <div class="dlg-head">
+    <div><h2 id="dlgTitle"></h2><div class="appdetail" id="dlgDetail"></div></div>
+    <button class="close" id="dlgClose" aria-label="Close">×</button>
+  </div>
+  <div class="dlg-body">
+    <div class="mini" id="dlgMini"></div>
+    <section class="card">
+      <div class="card-head"><h2>Month by month</h2>
+        <div class="legend"><span><i class="swatch" style="background:var(--down)"></i>Download</span><span><i class="swatch" style="background:var(--up)"></i>Upload</span></div></div>
+      <div class="chart" id="dlgMonths"><div class="tip"></div></div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2 id="dlgDaysTitle">Day by day</h2></div>
+      <div class="chart" id="dlgDays"><div class="tip"></div></div>
+    </section>
+  </div>
+</dialog>
 
 <script>
 // @license magnet:?xt=urn:btih:0b31508aeb0634b347b8270c7bee4d411b5d4109&dn=agpl-3.0.txt AGPL-3.0-or-later
@@ -305,22 +377,24 @@ const DATA = /*__DATA__*/null;
 
   const days = DATA.days, apps = DATA.apps, nets = DATA.nets, rows = DATA.rows;
   const firstDay = days.length ? days[0] : TODAY;
+  const SETTINGS = DATA.settings || {};
 
   // ---- state
-  let startDay = Math.min(28, Math.max(1, store.get("startDay", 1)));
+  let startDay = Math.min(28, Math.max(1, store.get("startDay", SETTINGS.limit_enabled ? SETTINGS.cycle_start_day || 1 : 1)));
   const netOn = nets.map((n) => { const v = store.get("net." + n.key, null); return v === null ? n.default : !!v; });
   let sortKey = store.get("sort", "tot");
   let showAll = false;
   let periods = [], current = 0;
 
   // period containing a date, given the cycle start day
-  function periodFor(s) {
+  function periodFor(s, sd) {
+    const startDay_ = sd || startDay;
     const d = toD(s);
     let y = d.getUTCFullYear(), m = d.getUTCMonth();
-    if (d.getUTCDate() < startDay) { m -= 1; if (m < 0) { m = 11; y -= 1; } }
-    const from = toS(new Date(Date.UTC(y, m, startDay)));
-    const to = toS(new Date(Date.UTC(y, m + 1, startDay - 1)));
-    const label = startDay === 1 ? MONTHS_LONG[m] + " " + y
+    if (d.getUTCDate() < startDay_) { m -= 1; if (m < 0) { m = 11; y -= 1; } }
+    const from = toS(new Date(Date.UTC(y, m, startDay_)));
+    const to = toS(new Date(Date.UTC(y, m + 1, startDay_ - 1)));
+    const label = startDay_ === 1 ? MONTHS_LONG[m] + " " + y
       : nice(from, toD(from).getUTCFullYear() !== toD(to).getUTCFullYear()) + " – " + nice(to, true);
     return { from, to, label, key: from };
   }
@@ -383,6 +457,7 @@ const DATA = /*__DATA__*/null;
     $("foot").innerHTML =
       "Figures come from Windows' own hourly network log (the same source as Settings → Data usage), copied every hour into a permanent history, so nothing rolls off after 30 days. " +
       "Windows writes the log about once an hour, so the most recent hour may not be in yet. 1 GB = 1024³ bytes, as in Windows Settings.<br>" +
+      "Alerts, data limit and update checks: open <b>NetUsage Settings</b> from your desktop or Start menu.<br>" +
       "History recorded from <b>" + esc(firstDay ? nice(firstDay, true) : "—") + "</b>. Files: <code>" + esc(DATA.dataDir || "") + "</code> · NetUsage " + esc(DATA.version || "") + "<br>" +
       "Free software under the <a href='https://www.gnu.org/licenses/agpl-3.0.html'>GNU AGPL v3 or later</a>, with no warranty. " +
       "Source code: <a href='" + esc(DATA.sourceUrl || "https://github.com/sakurarose1/NetUsage") + "'>" + esc((DATA.sourceUrl || "https://github.com/sakurarose1/NetUsage").replace(/^https:\/\//, "")) + "</a>";
@@ -423,6 +498,8 @@ const DATA = /*__DATA__*/null;
     renderApps(agg);
     renderNets(agg);
     renderHistory();
+    renderLimit();
+    renderApp();
   }
 
   function setValue(id, b) { const [n, u] = fmt(b, true); $(id).innerHTML = esc(n) + "<small>" + u + "</small>"; }
@@ -451,43 +528,37 @@ const DATA = /*__DATA__*/null;
     const step = [1, 2, 2.5, 5, 10].map((m) => m * p10).find((s) => x / s <= 4) || 10 * p10;
     return Math.ceil(x / step) * step * unit;
   }
-  function renderChart(p, agg) {
-    const host = $("chart"), tip = $("tip");
-    host.querySelectorAll("svg, .empty").forEach((n) => n.remove());
-    const list = [];
-    for (let s = p.from; s <= p.to; s = addDays(s, 1)) list.push(s);
-    const W = Math.max(320, host.clientWidth || 800), H = 240, padL = 52, padR = 4, padT = 8, padB = 24;
+  // items: [{axis, title, d, u, note}] -> stacked bars with a hover tooltip
+  function drawBars(host, items, opts) {
+    opts = opts || {};
+    const tip = host.querySelector(".tip");
+    host.querySelectorAll("svg").forEach((n) => n.remove());
+    const W = Math.max(300, host.clientWidth || 800), H = opts.height || 240, padL = 52, padR = 4, padT = 8, padB = 24;
     const iw = W - padL - padR, ih = H - padT - padB;
-    let max = 0;
-    list.forEach((d) => { const v = agg.perDay.get(d); if (v) max = Math.max(max, v[0] + v[1]); });
+    const max = items.reduce((m, it) => Math.max(m, (it.d || 0) + (it.u || 0)), 0);
     const top = niceMax(max);
     const y = (b) => padT + ih - (b / top) * ih;
-    const slot = iw / list.length, bw = Math.max(2, Math.min(28, slot * 0.68));
-    const ns = "http://www.w3.org/2000/svg";
-    let svg = "<svg xmlns='" + ns + "' viewBox='0 0 " + W + " " + H + "' role='img' aria-label='Daily download and upload'>";
+    const n = Math.max(1, items.length);
+    const slot = iw / n, bw = Math.max(2, Math.min(opts.maxBar || 28, slot * 0.68));
+    let svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' style='height:" + H + "px' role='img' aria-label='" + esc(opts.label || "Download and upload") + "'>";
     svg += "<g class='axis'>";
     for (let i = 0; i <= 4; i++) {
       const v = (top / 4) * i, yy = y(v);
       if (i > 0) svg += "<line class='gridline' x1='" + padL + "' x2='" + (W - padR) + "' y1='" + yy + "' y2='" + yy + "'/>";
       svg += "<text x='" + (padL - 8) + "' y='" + (yy + 4) + "' text-anchor='end'>" + (i === 0 ? "0" : esc(fmt(v))) + "</text>";
     }
-    const every = list.length > 20 ? (W < 560 ? 7 : 3) : 1;
-    list.forEach((d, i) => {
-      const dd = toD(d).getUTCDate();
-      if (i % every === 0 || i === list.length - 1 && every === 1)
-        svg += "<text x='" + (padL + slot * i + slot / 2) + "' y='" + (H - 6) + "' text-anchor='middle'>" + (list.length > 31 ? esc(nice(d)) : dd) + "</text>";
+    const minGap = opts.labelWidth || 26;
+    const every = Math.max(1, Math.ceil(minGap / slot));
+    items.forEach((it, i) => {
+      if (i % every === 0) svg += "<text x='" + (padL + slot * i + slot / 2) + "' y='" + (H - 6) + "' text-anchor='middle'>" + esc(it.axis) + "</text>";
     });
     svg += "</g>";
-    list.forEach((d, i) => {
+    items.forEach((it, i) => {
       const x = padL + slot * i;
-      if (d < firstDay || d > TODAY) {
-        svg += "<rect class='untracked' x='" + (x + 1) + "' y='" + padT + "' width='" + Math.max(0, slot - 2) + "' height='" + ih + "' rx='3' opacity='.5'/>";
-      }
+      if (it.note) svg += "<rect class='untracked' x='" + (x + 1) + "' y='" + padT + "' width='" + Math.max(0, slot - 2) + "' height='" + ih + "' rx='3' opacity='.5'/>";
       svg += "<rect class='hit' data-i='" + i + "' x='" + x + "' y='" + padT + "' width='" + slot + "' height='" + ih + "' rx='4'/>";
-      const v = agg.perDay.get(d);
-      if (!v) return;
       const bx = x + (slot - bw) / 2, r = Math.min(4, bw / 2);
-      const hd = (v[0] / top) * ih, hu = (v[1] / top) * ih;
+      const hd = ((it.d || 0) / top) * ih, hu = ((it.u || 0) / top) * ih;
       const gap = hd > 0 && hu > 0 ? 2 : 0;
       if (hd > 0) svg += barPath(bx, padT + ih - hd, bw, hd, hu > 0 ? 0 : r, "var(--down)");
       if (hu > 0) svg += barPath(bx, padT + ih - hd - gap - hu, bw, hu, r, "var(--up)");
@@ -495,15 +566,13 @@ const DATA = /*__DATA__*/null;
     svg += "<line class='baseline' x1='" + padL + "' x2='" + (W - padR) + "' y1='" + (padT + ih) + "' y2='" + (padT + ih) + "'/>";
     svg += "</svg>";
     host.insertAdjacentHTML("afterbegin", svg);
-    const el = host.querySelector("svg");
-    el.querySelectorAll(".hit").forEach((h) => {
+    host.querySelectorAll(".hit").forEach((h) => {
       h.addEventListener("mousemove", (ev) => {
-        const i = +h.dataset.i, d = list[i], v = agg.perDay.get(d) || [0, 0];
-        const status = d > TODAY ? "Not yet" : d < firstDay ? "Before recording started" : null;
-        tip.innerHTML = "<div class='t'>" + esc(nice(d, true)) + "</div>" + (status ? "<div class='r'>" + status + "</div>" :
-          "<div class='r'><i class='swatch' style='background:var(--down)'></i>Download<b>" + fmt(v[0]) + "</b></div>" +
-          "<div class='r'><i class='swatch' style='background:var(--up)'></i>Upload<b>" + fmt(v[1]) + "</b></div>" +
-          "<div class='r'>Total<b>" + fmt(v[0] + v[1]) + "</b></div>");
+        const it = items[+h.dataset.i];
+        tip.innerHTML = "<div class='t'>" + esc(it.title) + "</div>" + (it.note ? "<div class='r'>" + esc(it.note) + "</div>" :
+          "<div class='r'><i class='swatch' style='background:var(--down)'></i>Download<b>" + fmt(it.d || 0) + "</b></div>" +
+          "<div class='r'><i class='swatch' style='background:var(--up)'></i>Upload<b>" + fmt(it.u || 0) + "</b></div>" +
+          "<div class='r'>Total<b>" + fmt((it.d || 0) + (it.u || 0)) + "</b></div>");
         const box = host.getBoundingClientRect();
         tip.style.display = "block";
         let left = ev.clientX - box.left + 14;
@@ -513,6 +582,18 @@ const DATA = /*__DATA__*/null;
       });
       h.addEventListener("mouseleave", () => { tip.style.display = "none"; });
     });
+  }
+  function dayItems(p, perDay) {
+    const list = [];
+    for (let d = p.from; d <= p.to; d = addDays(d, 1)) {
+      const v = perDay.get(d) || [0, 0];
+      list.push({ axis: String(toD(d).getUTCDate()), title: nice(d, true), d: v[0], u: v[1],
+        note: d > TODAY ? "Not yet" : d < firstDay ? "Before recording started" : null });
+    }
+    return list;
+  }
+  function renderChart(p, agg) {
+    drawBars($("chart"), dayItems(p, agg.perDay), { label: "Daily download and upload" });
   }
   // rect with only the top corners rounded (anchored to the baseline)
   function barPath(x, y, w, h, r, fill) {
@@ -534,11 +615,15 @@ const DATA = /*__DATA__*/null;
     $("apps").innerHTML = shown.length ? shown.map((a) => {
       const detail = Array.from(a.detail).join(" · ");
       const wd = (100 * a.recv / maxTot), wu = (100 * a.sent / maxTot);
-      return "<tr><td><div class='appname'>" + esc(a.name) + "</div><div class='appdetail' title='" + esc(detail) + "'>" + esc(detail) + "</div>" +
+      return "<tr class='app' tabindex='0' data-name='" + esc(a.name) + "'><td><div class='appname'>" + esc(a.name) + "</div><div class='appdetail' title='" + esc(detail) + "'>" + esc(detail) + "</div>" +
         "<div class='split'>↓ " + fmt(a.recv) + " · ↑ " + fmt(a.sent) + "</div>" +
         "<div class='bar'>" + (wd > 0 ? "<i class='d' style='width:" + wd.toFixed(2) + "%'></i>" : "") + (wu > 0 ? "<i class='u' style='width:" + wu.toFixed(2) + "%'></i>" : "") + "</div></td>" +
         "<td>" + fmt(a.recv) + "</td><td>" + fmt(a.sent) + "</td><td><b>" + fmt(a.tot) + "</b></td></tr>";
     }).join("") : "<tr><td colspan='4' class='empty'>" + (q ? "No app matches “" + esc(q) + "”." : "No traffic in this period.") + "</td></tr>";
+    $("apps").querySelectorAll("tr.app").forEach((tr) => {
+      tr.onclick = () => openApp(tr.dataset.name);
+      tr.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openApp(tr.dataset.name); } };
+    });
     const btn = $("more");
     btn.style.display = !q && list.length > LIMIT ? "" : "none";
     btn.textContent = showAll ? "Show top " + LIMIT + " only" : "Show all " + list.length + " apps";
@@ -575,13 +660,120 @@ const DATA = /*__DATA__*/null;
     $("history").querySelectorAll("tr[data-i]").forEach((tr) => tr.onclick = () => { current = +tr.dataset.i; sync(); window.scrollTo({ top: 0, behavior: "smooth" }); });
   }
 
+  // ---- one app's history (opens when an app row is clicked)
+  function appSeries(name) {
+    const perDay = new Map(), details = new Set();
+    for (const r of rows) {
+      if (!netOn[r[2]] || apps[r[1]][0] !== name) continue;
+      const day = days[r[0]];
+      const v = perDay.get(day) || [0, 0]; v[0] += r[3]; v[1] += r[4]; perDay.set(day, v);
+      details.add(apps[r[1]][1]);
+    }
+    return { perDay, details };
+  }
+  function sumRange(perDay, from, to) {
+    let d = 0, u = 0;
+    perDay.forEach((v, day) => { if (day >= from && day <= to) { d += v[0]; u += v[1]; } });
+    return [d, u];
+  }
+  let dlgApp = null;
+  function openApp(name) {
+    dlgApp = name;
+    const dlg = $("appdlg");
+    if (!dlg.open) { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", ""); }
+    renderApp();
+  }
+  function renderApp() {
+    if (!dlgApp) return;
+    const p = periods[current], s = appSeries(dlgApp);
+    $("dlgTitle").textContent = dlgApp;
+    $("dlgDetail").textContent = Array.from(s.details).join(" · ");
+    const months = periods.filter((x) => !x.rolling && x.to >= firstDay).slice().reverse();
+    const mItems = months.map((x) => {
+      const v = sumRange(s.perDay, x.from, x.to);
+      const short = startDay === 1 ? MONTHS[toD(x.from).getUTCMonth()] + " " + String(toD(x.from).getUTCFullYear()).slice(2) : nice(x.from);
+      return { axis: short, title: x.label + (x.from < firstDay ? " (recorded from " + nice(firstDay) + ")" : ""), d: v[0], u: v[1] };
+    });
+    let all = [0, 0], busiest = null;
+    s.perDay.forEach((v, day) => { all[0] += v[0]; all[1] += v[1]; if (!busiest || v[0] + v[1] > busiest[1]) busiest = [day, v[0] + v[1]]; });
+    const cur = sumRange(s.perDay, p.from, p.to);
+    const full = mItems.filter((m, i) => months[i].to < TODAY && months[i].from >= firstDay);
+    const avg = full.length ? full.reduce((t, m) => t + m.d + m.u, 0) / full.length : null;
+    $("dlgMini").innerHTML =
+      "<div>" + esc(p.label) + "<b>" + fmt(cur[0] + cur[1]) + "</b>↓ " + fmt(cur[0]) + " · ↑ " + fmt(cur[1]) + "</div>" +
+      (avg !== null ? "<div>Average full month<b>" + fmt(avg) + "</b>" + full.length + " month" + (full.length === 1 ? "" : "s") + "</div>" : "") +
+      "<div>Since " + esc(nice(firstDay, true)) + "<b>" + fmt(all[0] + all[1]) + "</b>↓ " + fmt(all[0]) + " · ↑ " + fmt(all[1]) + "</div>" +
+      (busiest ? "<div>Busiest day<b>" + fmt(busiest[1]) + "</b>" + esc(nice(busiest[0], true)) + "</div>" : "");
+    drawBars($("dlgMonths"), mItems, { height: 190, maxBar: 48, labelWidth: 44, label: dlgApp + " by month" });
+    $("dlgDaysTitle").textContent = "Day by day · " + p.label;
+    drawBars($("dlgDays"), dayItems(p, s.perDay), { height: 190, label: dlgApp + " by day" });
+  }
+  function closeApp() { dlgApp = null; const d = $("appdlg"); if (d.close) d.close(); else d.removeAttribute("open"); }
+
+  // ---- data limit (only when switched on in NetUsage Settings)
+  function renderLimit() {
+    const box = $("limit");
+    if (!SETTINGS.limit_enabled) { box.hidden = true; return; }
+    box.hidden = false;
+    const cyc = periodFor(TODAY, SETTINGS.cycle_start_day || 1);
+    const t = totalsOnly(cyc.from, cyc.to);
+    const used = SETTINGS.limit_count === "download" ? t.recv : t.recv + t.sent;
+    const limit = (SETTINGS.limit_gb || 0) * GB;
+    const pct = limit ? 100 * used / limit : 0;
+    const warn = SETTINGS.limit_warn_percent || 80;
+    const level = pct >= 100 ? "critical" : pct >= warn ? "warning" : "good";
+    const [un, uu] = fmt(used, true);
+    $("limitBig").innerHTML = esc(un) + " <small>" + uu + "</small> <small>of " + esc(fmt(limit)) + " used (" + Math.round(pct) + "%)</small>";
+    $("limitLeft").textContent = pct >= 100 ? fmt(used - limit) + " over the limit" : fmt(limit - used) + " left";
+    $("limitState").className = "state " + level;
+    $("limitState").innerHTML = level === "critical" ? "<i>!</i>Over the limit" : level === "warning" ? "<i>!</i>Close to the limit" : "<i>✓</i>Within the limit";
+    const fill = $("limitFill");
+    fill.className = "fill " + (level === "good" ? "" : level);
+    fill.style.width = Math.min(100, pct).toFixed(2) + "%";
+    $("limitMark").style.left = "calc(" + warn + "% - 1px)";
+    $("limitMeter").setAttribute("aria-valuenow", String(Math.round(pct)));
+    const left = daysBetween(TODAY, cyc.to);
+    $("limitCycle").textContent = (SETTINGS.limit_count === "download" ? "Download only" : "Download + upload") +
+      " · " + nice(cyc.from) + " – " + nice(cyc.to) + " · resets in " + left + " day" + (left === 1 ? "" : "s");
+    const from = cyc.from < firstDay ? firstDay : cyc.from;
+    const elapsed = daysBetween(from, TODAY), length = daysBetween(cyc.from, cyc.to);
+    $("limitPace").textContent = elapsed >= 2 && from === cyc.from ? "At this pace: ~" + fmt(used / elapsed * length) + " by " + nice(cyc.to) : "";
+  }
+
+  // ---- update notice and recent alerts
+  function renderNotices() {
+    const u = DATA.update, box = $("update");
+    if (u && u.version && store.get("dismissUpdate", "") !== u.version) {
+      box.hidden = false;
+      box.innerHTML = "<span><b>NetUsage " + esc(u.version) + " is available.</b> You have " + esc(DATA.version) + ". Your history is kept when you update.</span>" +
+        "<a class='btn' href='" + esc(u.url || (DATA.sourceUrl + "/releases/latest")) + "' target='_blank' rel='noopener'>Download</a>" +
+        "<button class='x' id='dismissUpdate'>Later</button>";
+      $("dismissUpdate").onclick = () => { store.set("dismissUpdate", u.version); box.hidden = true; };
+    }
+    const now = Date.now();
+    const recent = (DATA.alerts || []).filter((a) => now - new Date(a.time).getTime() < 3 * 86400000);
+    const ab = $("alerts");
+    if (recent.length) {
+      ab.hidden = false;
+      ab.innerHTML = "<b>Recent alerts</b><ul class='alerts'>" + recent.map((a) => {
+        const t = new Date(a.time);
+        const when = t.toLocaleDateString(undefined, { day: "numeric", month: "short" }) + " " + t.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+        return "<li><span class='when'>" + esc(when) + "</span><span><span class='ttl'>" + esc(a.title) + ".</span> <span class='bd'>" + esc(a.body) + "</span></span></li>";
+      }).join("") + "</ul>";
+    }
+  }
+
   // ---- wire up
+  $("dlgClose").onclick = closeApp;
+  $("appdlg").addEventListener("click", (e) => { if (e.target === $("appdlg")) closeApp(); });
+  $("appdlg").addEventListener("close", () => { dlgApp = null; });
   document.querySelectorAll("th.sortable").forEach((th) => th.onclick = () => { sortKey = th.dataset.k; store.set("sort", sortKey); render(); });
   $("q").oninput = () => renderApps(aggregate(periods[current].from, periods[current].to));
   $("more").onclick = () => { showAll = !showAll; renderApps(aggregate(periods[current].from, periods[current].to)); };
-  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { const p = periods[current]; renderChart(p, aggregate(p.from, p.to)); }, 120); });
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { const p = periods[current]; renderChart(p, aggregate(p.from, p.to)); renderApp(); }, 120); });
 
   renderMeta();
+  renderNotices();
   fillControls();
   rebuildPeriods();
 })();

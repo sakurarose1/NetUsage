@@ -15,33 +15,55 @@ NetUsage fixes all three. It copies Windows' own usage log every hour into a per
   <img alt="The NetUsage dashboard: download, upload and total for the month, a day-by-day chart, apps and networks" src="docs/dashboard-light.png">
 </picture>
 
-<sub>Screenshot made with sample data.</sub>
+<sub>Screenshots made with sample data.</sub>
+
+Click any app to see its own history:
+
+<img alt="One app's usage month by month and day by day" src="docs/app-history.png" width="720">
 
 ## Features
 
 - **Real months**: October, September, … each counted on its own, or **"Month starts on day N"** to match the day your internet package renews.
 - **Download and upload shown separately**, plus the total.
 - **All networks added together.** Untick any network to leave it out. VPN and virtual adapters start unticked, because their traffic is already counted on your Wi-Fi.
-- **Per-app breakdown** for any month, like the Windows Settings page.
+- **Per-app breakdown** for any month, like the Windows Settings page. **Click an app** to see its own month-by-month and day-by-day history.
 - **Day-by-day chart**, a **month-by-month history**, and an estimate of where the current month will end up.
+- **Spike alerts**: a Windows notification when an app suddenly uses far more data than it usually does, like a surprise 30 GB game or system download.
+- **Optional monthly data limit**: switch it on only if your internet package has one. You get a progress bar and a warning at 80% (you choose) and at 100%.
+- **Update check**: NetUsage tells you when a new version is published here, so you never miss a fix.
 - **Nothing ever rolls off.** The history keeps growing for as long as NetUsage is installed.
 - Light and dark mode, works at any window size.
-- No account, no cloud, no internet connection needed. Everything stays on your PC.
+- No account and no cloud. Your usage never leaves your PC. The only thing NetUsage connects to is GitHub, once a day, to see if there's a new version, and you can switch that off.
 
 ## Install
 
 1. Install **Python 3.10 or newer** from [python.org](https://www.python.org/downloads/). Tick **"Add python.exe to PATH"**. The Microsoft Store version of Python can't run background tasks, so use the python.org one.
-2. Download **`NetUsage-1.1.zip`** from **[Releases](../../releases/latest)** and unzip it.
+2. Download the **`NetUsage-x.y.zip`** file from the latest **[Release](../../releases/latest)** and unzip it.
    (The green **Code → Download ZIP** button works too. In that case `Install.bat` downloads three small libraries from PyPI the first time.)
 3. Double-click **`Install.bat`** and click **Yes** when Windows asks for permission.
 
-That's it. A **Data Usage** shortcut appears on your desktop. Windows usually still has the last few weeks of usage, so the first run fills those in straight away. After that NetUsage updates itself every hour in the background; reopen the shortcut or press F5 to see the newest numbers.
+That's it. **Data Usage** and **NetUsage Settings** shortcuts appear on your desktop and in the Start menu. Windows usually still has the last few weeks of usage, so the first run fills those in straight away. After that NetUsage updates itself every hour in the background; reopen the shortcut or press F5 to see the newest numbers.
 
 Once installed, NetUsage runs from `C:\ProgramData\NetUsage`, so you can delete the downloaded folder. Keep the zip if you want `Uninstall.bat` handy.
 
+**Updating:** download the new zip and run its `Install.bat` the same way. Your history and settings are kept.
+
+## Settings and alerts
+
+Open **NetUsage Settings** (desktop or Start menu, it asks for administrator permission) to change:
+
+| Setting | Default | What it does |
+|---|---|---|
+| Show Windows notifications | On | Pops up the alerts below in the corner of the screen. They also always appear at the top of the dashboard. |
+| Spike alerts | On, at least 2 GB | Alerts when an app uses at least this much in one day **and** more than 3× its normal daily amount (the median of its previous 30 days). Heavy apps you use every day don't trigger it. It needs a week of history first. |
+| Monthly data limit | Off | Your package size, whether it counts download + upload or download only, the day it resets, and when to warn you. Adds a progress bar to the dashboard. |
+| Check for updates | On | Asks GitHub once a day for the latest release. Nothing about your usage is sent. |
+
+**Send test notification** shows what an alert looks like. Clicking a notification opens the dashboard (or the download page, for an update).
+
 ## Uninstall
 
-Double-click **`Uninstall.bat`**. It removes the hourly task and the desktop shortcut, and asks whether to delete your recorded history too.
+Double-click **`Uninstall.bat`**. It removes NetUsage's background tasks and shortcuts, and asks whether to delete your recorded history too.
 
 Without the download folder, run this from an administrator Command Prompt:
 
@@ -55,7 +77,9 @@ Add `--purge` to delete the history as well.
 
 Windows records every app's network traffic once an hour in its *System Resource Usage Monitor* database, `C:\Windows\System32\sru\SRUDB.dat`. This is the same data the Settings page reads.
 
-Every hour, a scheduled task (**NetUsage Collector**, running as SYSTEM) takes a shadow copy of that file, reads the network-usage table, and adds any new rows to `history.sqlite`. Rows are never deleted. Then it rebuilds `dashboard.html`, a single self-contained page that the desktop shortcut opens.
+Every hour, a scheduled task (**NetUsage Collector**, running as SYSTEM) takes a shadow copy of that file, reads the network-usage table, and adds any new rows to `history.sqlite`. Rows are never deleted. Then it works out any alerts, writes them to `alerts.json`, and rebuilds `dashboard.html`, a single self-contained page that the desktop shortcut opens. Once a day it also asks GitHub for the latest version number.
+
+Windows only lets programs show notifications inside your own sign-in session, so a second, light task (**NetUsage Notifier**) runs as you, a few minutes after each collection and when you sign in. It shows any alerts you haven't seen yet.
 
 For each hour and network, Windows writes one row per app plus one row with the network's total. NetUsage uses the total row for the totals and the app rows for the per-app list, so nothing is counted twice. Any small difference shows up as "Other (not tied to an app)". Numbers use 1 GB = 1024³ bytes, the same as Windows Settings, so they should match it.
 
@@ -63,6 +87,8 @@ For each hour and network, Windows writes one row per app plus one row with the 
 |---|---|
 | `C:\ProgramData\NetUsage\history.sqlite` | Your permanent history |
 | `C:\ProgramData\NetUsage\dashboard.html` | The page the desktop shortcut opens |
+| `C:\ProgramData\NetUsage\settings.json` | Your settings |
+| `C:\ProgramData\NetUsage\alerts.json` | Alerts from the last 7 days |
 | `C:\ProgramData\NetUsage\collector.log` | What the hourly task did, and any errors |
 | `C:\ProgramData\NetUsage\app\` | The installed program |
 
@@ -75,6 +101,8 @@ From an administrator Command Prompt in `C:\ProgramData\NetUsage\app`:
 | `py netusage.py status` | Monthly totals in the console |
 | `py netusage.py collect` | Update right now instead of waiting for the hour |
 | `py netusage.py report --open` | Rebuild the dashboard and open it |
+| `py netusage.py settings` | Open the settings window |
+| `py netusage.py notify --test` | Show a test notification |
 | `py netusage.py uninstall [--purge]` | Remove NetUsage |
 
 ## Limits

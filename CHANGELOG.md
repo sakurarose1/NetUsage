@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2 (2026-10-14)
+
+- **Update check**: once a day NetUsage asks GitHub for the latest release. When there is a newer version, the dashboard shows a Download button and you get a notification. Can be switched off.
+- **Spike alerts**: a notification when an app uses at least 2 GB in a day (adjustable) and more than 3× its usual daily amount.
+- **Optional monthly data limit** (off by default): set your package size, what it counts, the reset day and a warning level. The dashboard shows a progress bar, and you get notifications at the warning level and at 100%.
+- **App history**: click any app in the dashboard to see its usage month by month and day by day.
+- New **NetUsage Settings** window (desktop and Start menu) with a test-notification button and "Check for updates now".
+- Recent alerts are listed at the top of the dashboard.
+- New background task **NetUsage Notifier** shows the notifications in your own sign-in session.
+
 ## 1.1 (2026-10-14): first public release
 
 - Released as free software under the GNU AGPL v3 or later.
