@@ -59,7 +59,7 @@ Open **NetUsage Settings** (desktop or Start menu, it asks for administrator per
 | Monthly data limit | Off | Your package size, whether it counts download + upload or download only, the day it resets, and when to warn you. Adds a progress bar to the dashboard. |
 | Check for updates | On | Asks GitHub once a day for the latest release. Nothing about your usage is sent. |
 
-**Send test notification** shows what an alert looks like. Clicking a notification opens the dashboard (or the download page, for an update).
+**Send test notification** shows what an alert looks like. **Update numbers now** refreshes the dashboard straight away instead of waiting for the next run. Clicking a notification opens the dashboard (or the download page, for an update).
 
 ## Uninstall
 
@@ -77,7 +77,7 @@ Add `--purge` to delete the history as well.
 
 Windows records every app's network traffic once an hour in its *System Resource Usage Monitor* database, `C:\Windows\System32\sru\SRUDB.dat`. This is the same data the Settings page reads.
 
-Every hour, a scheduled task (**NetUsage Collector**, running as SYSTEM) takes a shadow copy of that file, reads the network-usage table, and adds any new rows to `history.sqlite`. Rows are never deleted. Then it works out any alerts, writes them to `alerts.json`, and rebuilds `dashboard.html`, a single self-contained page that the desktop shortcut opens. Once a day it also asks GitHub for the latest version number.
+Every hour, and a couple of minutes after the PC starts, wakes from sleep or you sign in, a scheduled task (**NetUsage Collector**, running as SYSTEM) takes a shadow copy of that file, reads the network-usage table, and adds any new rows to `history.sqlite`. Rows are never deleted. Then it works out any alerts, writes them to `alerts.json`, and rebuilds `dashboard.html`, a single self-contained page that the desktop shortcut opens. Once a day it also asks GitHub for the latest version number.
 
 Windows only lets programs show notifications inside your own sign-in session, so a second, light task (**NetUsage Notifier**) runs as you, a few minutes after each collection and when you sign in. It shows any alerts you haven't seen yet.
 
@@ -99,7 +99,7 @@ From an administrator Command Prompt in `C:\ProgramData\NetUsage\app`:
 | Command | What it does |
 |---|---|
 | `py netusage.py status` | Monthly totals in the console |
-| `py netusage.py collect` | Update right now instead of waiting for the hour |
+| `py netusage.py collect --force` | Update right now instead of waiting for the next run |
 | `py netusage.py report --open` | Rebuild the dashboard and open it |
 | `py netusage.py settings` | Open the settings window |
 | `py netusage.py notify --test` | Show a test notification |
@@ -109,6 +109,7 @@ From an administrator Command Prompt in `C:\ProgramData\NetUsage\app`:
 
 - **History starts when you install.** Windows keeps only about 30–60 days, so older months are already gone and can't be recovered.
 - **Windows writes the usage log about once an hour**, so the most recent hour may not show yet.
+- **Nothing is recorded while the PC is asleep or off** (there's no traffic then anyway). NetUsage catches up a couple of minutes after it wakes.
 - It measures **this PC only**, not other devices on your network.
 - It needs the Windows usage service (the *Diagnostic Policy Service*) to be running. It is on by default.
 

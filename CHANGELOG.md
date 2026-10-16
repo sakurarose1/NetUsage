@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3 (2026-10-16)
+
+- **Catches up right after your PC wakes**: NetUsage now also runs about 2 minutes after the PC wakes from sleep (including Modern Standby), after sign-in, and 3 minutes after start-up, instead of waiting for the next hourly run.
+- **Clearer "last updated" notice**: when the page is a few hours old (usually because the PC was asleep or off), the dashboard says so plainly instead of suggesting the background task is broken.
+- **The dashboard reloads itself** once newer numbers are likely ready, but never while you're using it. It keeps the month you were looking at.
+- **"Update numbers now"** button in NetUsage Settings.
+- Wake-up runs are skipped if NetUsage already ran in the last 5 minutes.
+
 ## 1.2 (2026-10-14)
 
 - **Update check**: once a day NetUsage asks GitHub for the latest release. When there is a newer version, the dashboard shows a Download button and you get a notification. Can be switched off.

@@ -69,7 +69,7 @@ import subprocess
 import tempfile
 import time
 
-VERSION = "1.2"
+VERSION = "1.3"
 SOURCE_URL = "https://github.com/sakurarose1/NetUsage"
 RELEASES_API = "https://api.github.com/repos/sakurarose1/NetUsage/releases/latest"
 RELEASES_PAGE = SOURCE_URL + "/releases/latest"
@@ -507,7 +507,24 @@ def import_rows(con, rows):
     return after - before
 
 
+def recently_collected(minutes=5):
+    """True if a successful collection finished in the last few minutes (wake-up events can
+    fire many times an hour on Modern Standby PCs; one run is enough)."""
+    if not os.path.exists(DB_PATH):
+        return False
+    try:
+        con = open_db(readonly=True)
+        last = json.loads(meta_get(con, "last_collect") or "null")
+        con.close()
+        return bool(last and last.get("ok") and
+                    dt.datetime.now() - dt.datetime.fromisoformat(last["time"]) < dt.timedelta(minutes=minutes))
+    except Exception:
+        return False
+
+
 def cmd_collect(args):
+    if not getattr(args, "srum", None) and not getattr(args, "force", False) and recently_collected():
+        return 0
     started = time.time()
     status = {"time": dt.datetime.now().isoformat(timespec="seconds"), "ok": False}
     con = open_db()
@@ -1178,10 +1195,24 @@ def cmd_settings(args):
         else:
             status.set("You have the latest version (%s)." % VERSION)
 
+    def update_now():
+        status.set("Reading Windows' usage log... (this takes about half a minute)")
+        root.config(cursor="watch")
+        root.update_idletasks()
+        try:
+            ok = cmd_collect(argparse.Namespace(srum=None, force=True)) == 0
+        except Exception as e:
+            ok = False
+            log("Update now failed - %s: %s" % (type(e).__name__, e))
+        root.config(cursor="")
+        status.set("Done - reload the dashboard (F5) to see the newest numbers." if ok
+                   else "The update failed. Details are in collector.log.")
+
     btns = ttk.Frame(frm)
     btns.grid(row=12, column=0, columnspan=4, sticky="ew", padx=14, pady=(14, 4))
     ttk.Button(btns, text="Send test notification", command=test).pack(side="left")
     ttk.Button(btns, text="Check for updates now", command=check_now).pack(side="left", padx=6)
+    ttk.Button(btns, text="Update numbers now", command=update_now).pack(side="left")
     ttk.Button(btns, text="Save and close", command=lambda: save() and root.after(400, root.destroy)).pack(side="right")
     ttk.Button(btns, text="Save", command=save).pack(side="right", padx=6)
     ttk.Label(frm, textvariable=status, foreground="#2a78d6").grid(row=13, column=0, columnspan=4, sticky="w", padx=14, pady=(2, 6))
@@ -1216,6 +1247,18 @@ def _xml(s):
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
+# Fires when the PC wakes: classic sleep/hibernate (Power-Troubleshooter 1) and Modern Standby (Kernel-Power 507).
+WAKE_QUERY = ("<QueryList><Query Id=\"0\" Path=\"System\">"
+              "<Select Path=\"System\">*[System[Provider[@Name='Microsoft-Windows-Power-Troubleshooter'] and EventID=1]]</Select>"
+              "<Select Path=\"System\">*[System[Provider[@Name='Microsoft-Windows-Kernel-Power'] and EventID=507]]</Select>"
+              "</Query></QueryList>")
+
+
+def wake_trigger(delay):
+    return ("<EventTrigger><Enabled>true</Enabled><Subscription>%s</Subscription><Delay>%s</Delay></EventTrigger>"
+            % (_xml(WAKE_QUERY), delay))
+
+
 def task_xml(pythonw, script):
     """Hourly collector, runs as SYSTEM (needed to read Windows' usage database)."""
     start = dt.datetime.now().replace(minute=0, second=0, microsecond=0) + dt.timedelta(hours=1)
@@ -1230,7 +1273,9 @@ def task_xml(pythonw, script):
       <StartBoundary>%s</StartBoundary>
       <Enabled>true</Enabled>
     </TimeTrigger>
-    <BootTrigger><Enabled>true</Enabled><Delay>PT10M</Delay></BootTrigger>
+    <BootTrigger><Enabled>true</Enabled><Delay>PT3M</Delay></BootTrigger>
+    <LogonTrigger><Enabled>true</Enabled><Delay>PT2M</Delay></LogonTrigger>
+    %s
   </Triggers>
   <Principals>
     <Principal id="Author"><UserId>S-1-5-18</UserId><RunLevel>HighestAvailable</RunLevel></Principal>
@@ -1255,7 +1300,7 @@ def task_xml(pythonw, script):
     </Exec>
   </Actions>
 </Task>
-""" % (start.strftime("%Y-%m-%dT%H:%M:%S"), _xml(pythonw), _xml(script))
+""" % (start.strftime("%Y-%m-%dT%H:%M:%S"), wake_trigger("PT2M"), _xml(pythonw), _xml(script))
 
 
 def notify_task_xml(pythonw, script):
@@ -1273,7 +1318,8 @@ def notify_task_xml(pythonw, script):
       <StartBoundary>%s</StartBoundary>
       <Enabled>true</Enabled>
     </TimeTrigger>
-    <LogonTrigger><Enabled>true</Enabled><Delay>PT2M</Delay></LogonTrigger>
+    <LogonTrigger><Enabled>true</Enabled><Delay>PT4M</Delay></LogonTrigger>
+    %s
   </Triggers>
   <Principals>
     <Principal id="Author"><GroupId>S-1-5-32-545</GroupId><RunLevel>LeastPrivilege</RunLevel></Principal>
@@ -1298,7 +1344,7 @@ def notify_task_xml(pythonw, script):
     </Exec>
   </Actions>
 </Task>
-""" % (start.strftime("%Y-%m-%dT%H:%M:%S"), _xml(pythonw), _xml(script))
+""" % (start.strftime("%Y-%m-%dT%H:%M:%S"), wake_trigger("PT4M"), _xml(pythonw), _xml(script))
 
 
 def create_task(name, xml):
@@ -1363,8 +1409,7 @@ def cmd_install(args):
     script = os.path.join(APP_DIR, "netusage.py")
 
     print("2/6  Reading Windows' usage log (can take a minute)...")
-    class A: srum = None
-    code = cmd_collect(A())
+    code = cmd_collect(argparse.Namespace(srum=None, force=True))
     if code != 0:
         print("     The first read failed - see", LOG_PATH)
 
@@ -1421,6 +1466,7 @@ def main():
     sub = p.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("collect")
     c.add_argument("--srum", help="read this SRUDB.dat copy instead of the live one")
+    c.add_argument("--force", action="store_true", help="run even if it ran a few minutes ago")
     r = sub.add_parser("report")
     r.add_argument("--open", action="store_true")
     sub.add_parser("status")

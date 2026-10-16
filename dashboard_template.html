@@ -254,6 +254,7 @@ footer code { font-family: Consolas, ui-monospace, monospace; font-size: 12px; }
   </header>
 
   <div class="banner" id="banner"></div>
+  <div class="notice" id="stale" hidden></div>
   <div class="notice" id="update" hidden></div>
   <div class="notice" id="alerts" hidden></div>
 
@@ -385,6 +386,8 @@ const DATA = /*__DATA__*/null;
   let sortKey = store.get("sort", "tot");
   let showAll = false;
   let periods = [], current = 0;
+  let restoreKey = null;
+  try { restoreKey = sessionStorage.getItem("netusage.period"); } catch (e) {}
 
   // period containing a date, given the cycle start day
   function periodFor(s, sd) {
@@ -449,11 +452,18 @@ const DATA = /*__DATA__*/null;
       (DATA.generated ? " · page built " + esc(DATA.generated.replace("T", " ")) : "");
     const msgs = [];
     if (lc && !lc.ok) msgs.push("The last hourly update failed (" + esc(lc.error || "unknown error") + "). Details are in collector.log.");
-    if (DATA.generated) {
-      const age = (Date.now() - new Date(DATA.generated).getTime()) / 3600000;
-      if (age > 3) msgs.push("This page was last rebuilt " + Math.round(age) + " hours ago — the background task may not be running.");
-    }
     $("banner").innerHTML = msgs.join("<br>");
+    const age = DATA.generated ? (Date.now() - new Date(DATA.generated).getTime()) / 3600000 : 0;
+    if (age > 2) {
+      const t = new Date(DATA.generated);
+      const when = t.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }) +
+        (t.toDateString() === new Date().toDateString() ? "" : ", " + t.toLocaleDateString(undefined, { day: "numeric", month: "short" }));
+      const box = $("stale");
+      box.hidden = false;
+      box.innerHTML = "<span><b>Last updated at " + esc(when) + "</b> (" + Math.round(age) + " hours ago). " +
+        "If your PC was asleep or switched off, that's normal: NetUsage catches up a couple of minutes after it wakes, and this page reloads by itself. " +
+        "If it stays like this while your PC is on, open <b>NetUsage Settings</b> and click <b>Update numbers now</b>.</span>";
+    }
     $("foot").innerHTML =
       "Figures come from Windows' own hourly network log (the same source as Settings → Data usage), copied every hour into a permanent history, so nothing rolls off after 30 days. " +
       "Windows writes the log about once an hour, so the most recent hour may not be in yet. 1 GB = 1024³ bytes, as in Windows Settings.<br>" +
@@ -477,12 +487,18 @@ const DATA = /*__DATA__*/null;
     const keepRolling = periods[current] && periods[current].rolling;
     periods = buildPeriods();
     current = keepRolling ? periods.length - 1 : 0;
+    if (restoreKey !== null) {
+      const i = periods.findIndex((p) => p.key === restoreKey);
+      if (i >= 0) current = i;
+      restoreKey = null;
+    }
     $("period").innerHTML = periods.map((p, i) =>
       (p.rolling ? "<option disabled>──────────</option>" : "") + "<option value='" + i + "'>" + esc(p.label) + "</option>").join("");
     sync();
   }
   function sync() {
     $("period").value = String(current);
+    try { sessionStorage.setItem("netusage.period", periods[current].key); } catch (e) {}
     const p = periods[current];
     $("prev").disabled = !p.rolling && current >= periods.length - 2;
     $("next").disabled = p.rolling || current === 0;
@@ -771,6 +787,28 @@ const DATA = /*__DATA__*/null;
   $("q").oninput = () => renderApps(aggregate(periods[current].from, periods[current].to));
   $("more").onclick = () => { showAll = !showAll; renderApps(aggregate(periods[current].from, periods[current].to)); };
   let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { const p = periods[current]; renderChart(p, aggregate(p.from, p.to)); renderApp(); }, 120); });
+
+  // Reload by itself once the hourly task has had a chance to rebuild the page - but never
+  // while you're using it (dialog open, or clicked/typed in the last 5 minutes).
+  let lastInput = Date.now();
+  ["pointerdown", "keydown", "wheel"].forEach((ev) => window.addEventListener(ev, () => { lastInput = Date.now(); }, { passive: true }));
+  const builtAt = DATA.generated ? new Date(DATA.generated).getTime() : Date.now();
+  const openedAt = Date.now();
+  // if a reload brought back the same page (PC still asleep / task not run yet), wait longer next time
+  let waitMin = 3;
+  try {
+    const prev = JSON.parse(sessionStorage.getItem("netusage.reload") || "null");
+    if (prev && prev.built === DATA.generated) waitMin = Math.min(60, prev.wait * 2);
+    sessionStorage.setItem("netusage.reload", JSON.stringify({ built: DATA.generated, wait: waitMin }));
+  } catch (e) {}
+  function maybeReload() {
+    const now = Date.now();
+    if (document.hidden || $("appdlg").open || now - lastInput < 5 * 60000) return;
+    // the hourly run rebuilds the page ~1 min past the hour; also catch up after the PC wakes
+    if (now - builtAt > 62 * 60000 && now - openedAt > waitMin * 60000) location.reload();
+  }
+  setInterval(maybeReload, 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(maybeReload, 1000); });
 
   renderMeta();
   renderNotices();
