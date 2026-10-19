@@ -21,6 +21,10 @@ Click any app to see its own history:
 
 <img alt="One app's usage month by month and day by day" src="docs/app-history.png" width="720">
 
+The **Compare periods** tab shows what changed since your last renewal:
+
+<img alt="Comparing this period with the last one: totals, what changed, running total and per-app changes" src="docs/compare.png" width="720">
+
 ## Features
 
 - **Real months**: October, September, … each counted on its own, or **"Month starts on day N"** to match the day your internet package renews.
@@ -28,6 +32,8 @@ Click any app to see its own history:
 - **All networks added together.** Untick any network to leave it out. VPN and virtual adapters start unticked, because their traffic is already counted on your Wi-Fi.
 - **Per-app breakdown** for any month, like the Windows Settings page. **Click an app** to see its own month-by-month and day-by-day history.
 - **Day-by-day chart**, a **month-by-month history**, and an estimate of where the current month will end up.
+- **Compare periods**: put this period next to the last one (or any two) and see what went up, what went down and why, in plain language. **Copy summary** turns it into text you can paste anywhere.
+- **Renewal summary**: on the day your package renews, a notification sums up the period that just ended compared with the one before.
 - **Spike alerts**: a Windows notification when an app suddenly uses far more data than it usually does, like a surprise 30 GB game or system download.
 - **Optional monthly data limit**: switch it on only if your internet package has one. You get a progress bar and a warning at 80% (you choose) and at 100%.
 - **Update check**: NetUsage tells you when a new version is published here, so you never miss a fix.
@@ -54,9 +60,11 @@ Open **NetUsage Settings** (desktop or Start menu, it asks for administrator per
 
 | Setting | Default | What it does |
 |---|---|---|
+| Package renews on day | 1 | The day your internet package renews. The dashboard's periods, the comparison and the data limit all start on this day. |
+| Renewal summary | On | On renewal day, a notification compares the period that just ended with the one before. Clicking it opens the comparison. |
 | Show Windows notifications | On | Pops up the alerts below in the corner of the screen. They also always appear at the top of the dashboard. |
 | Spike alerts | On, at least 2 GB | Alerts when an app uses at least this much in one day **and** more than 3× its normal daily amount (the median of its previous 30 days). Heavy apps you use every day don't trigger it. It needs a week of history first. |
-| Monthly data limit | Off | Your package size, whether it counts download + upload or download only, the day it resets, and when to warn you. Adds a progress bar to the dashboard. |
+| Monthly data limit | Off | Your package size, whether it counts download + upload or download only, and when to warn you. Adds a progress bar to the dashboard. |
 | Check for updates | On | Asks GitHub once a day for the latest release. Nothing about your usage is sent. |
 
 **Send test notification** shows what an alert looks like. **Update numbers now** refreshes the dashboard straight away instead of waiting for the next run. Clicking a notification opens the dashboard (or the download page, for an update).

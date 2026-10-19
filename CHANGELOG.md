@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4 (2026-10-19)
+
+- **Compare periods**: a new tab on the dashboard that puts two periods side by side: download, upload, total and daily average with the change in GB and %, a plain-language "What changed" list (biggest increases and drops, new apps, apps you stopped using, busiest days, which network you used more), a running-total chart, and every app's and network's change.
+- A period that has just started is compared fairly with the **same number of days** of the one before (or switch to whole periods).
+- **Copy summary** puts the comparison on the clipboard as text, ready to paste into a chat or a note.
+- **Renewal summary**: on the day your package renews, a notification tells you how much the period that just ended used, how it compares with the one before, and which app changed most. Clicking it opens the comparison.
+- The renewal day is now its own setting ("Your internet package renews on day …") and is used for the dashboard's periods, the comparison and the data limit.
+
 ## 1.3 (2026-10-16)
 
 - **Catches up right after your PC wakes**: NetUsage now also runs about 2 minutes after the PC wakes from sleep (including Modern Standby), after sign-in, and 3 minutes after start-up, instead of waiting for the next hourly run.

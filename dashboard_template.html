@@ -37,6 +37,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   --down: #2a78d6;
   --up: #eb6834;
   --accent: #2a78d6;
+  --inc: #e34948;
+  --dec: #2a78d6;
+  --prev: #a3a29d;
   --warn-bg: #fff4d6;
   --warn-text: #6b4a00;
   --shadow: 0 1px 2px rgba(0,0,0,.05);
@@ -55,6 +58,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     --down: #3987e5;
     --up: #d95926;
     --accent: #5598e7;
+    --inc: #e66767;
+    --dec: #3987e5;
+    --prev: #6f6e69;
     --warn-bg: #3a2f12;
     --warn-text: #f3d48a;
     --shadow: none;
@@ -64,7 +70,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   color-scheme: dark;
   --bg: #121211; --surface: #1a1a19; --surface-2: #232321; --border: #2e2e2b;
   --text: #ffffff; --text-2: #c3c2b7; --text-3: #9a998f; --grid: #2a2a27;
-  --down: #3987e5; --up: #d95926; --accent: #5598e7;
+  --down: #3987e5; --up: #d95926; --accent: #5598e7; --inc: #e66767; --dec: #3987e5; --prev: #6f6e69;
   --warn-bg: #3a2f12; --warn-text: #f3d48a; --shadow: none;
 }
 * { box-sizing: border-box; }
@@ -209,13 +215,58 @@ input[type=search] { width: 180px; }
 #history td.barcell { width: 38%; }
 .tag { font-size: 11px; color: var(--text-3); font-weight: 400; margin-left: 6px; }
 
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin: 0 0 16px; }
+.tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 8px 12px; min-height: 38px;
+  color: var(--text-2); font-weight: 600; margin-bottom: -1px; }
+.tabs button:hover { background: none; color: var(--text); }
+.tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+[hidden] { display: none !important; }
+
+.cmp-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.cmp-controls label { display: flex; align-items: center; gap: 8px; color: var(--text-2); font-size: 13px; }
+.cmp-controls select { font-weight: 600; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; min-height: 32px; padding: 4px 10px; font-size: 13px; color: var(--text-2); }
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button[aria-pressed="true"] { background: var(--surface-2); color: var(--text); font-weight: 600; }
+.cmp-actions { margin-left: auto; }
+.cmp-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+.cmp-tiles .value { font-size: 28px; }
+.was { color: var(--text-2); font-size: 12.5px; margin-top: 2px; }
+.chg { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.chg .ar { font-size: 11px; }
+.chg.up .ar { color: var(--inc); } .chg.down .ar { color: var(--dec); } .chg.same .ar { color: var(--text-3); }
+.insights { margin: 0; padding: 0; list-style: none; }
+.insights li { padding: 7px 0 7px 22px; position: relative; border-bottom: 1px solid var(--border); line-height: 1.5; }
+.insights li:last-child { border-bottom: 0; }
+.insights li::before { content: ""; position: absolute; left: 4px; top: 15px; width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); }
+.insights li.up::before { background: var(--inc); } .insights li.down::before { background: var(--dec); }
+.dbar { position: relative; height: 8px; width: 100%; min-width: 80px; }
+.dbar::before { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; background: var(--text-3); opacity: .5; }
+.dbar i { position: absolute; top: 0; bottom: 0; }
+.dbar i.inc { left: 50%; background: var(--inc); border-radius: 0 4px 4px 0; }
+.dbar i.dec { right: 50%; background: var(--dec); border-radius: 4px 0 0 4px; }
+td.chgcell { font-weight: 600; min-width: 110px; }
+.cmp-stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 12px; }
+.cmp-t .appdetail { max-width: 420px; }
+.cmp-t td.chgcell, .cmp-n td.chgcell { width: 22%; }
+td.chgcell .chg { margin-top: 0; }
+td.chgcell .pct { font-size: 12px; color: var(--text-3); font-weight: 400; }
+td.chgcell .dbar { margin-top: 6px; }
+.pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 10px; background: var(--surface-2); color: var(--text-2); margin-left: 6px; vertical-align: 1px; }
+.chart .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .cross { stroke: var(--text-3); stroke-width: 1; }
+.chart .endlbl { font-size: 11.5px; font-weight: 600; fill: var(--text-2); }
+.legend .ln { display: inline-block; width: 16px; height: 2px; border-radius: 1px; }
+
 footer { margin-top: 20px; color: var(--text-3); font-size: 12.5px; line-height: 1.6; }
 footer a { color: var(--accent); }
 footer code { font-family: Consolas, ui-monospace, monospace; font-size: 12px; }
 .empty { color: var(--text-3); padding: 16px 0; text-align: center; }
 
 @media (max-width: 860px) {
-  .grid2 { grid-template-columns: 1fr; }
+  .cmp-tiles { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .grid2 { grid-template-columns: minmax(0, 1fr); }
   .tiles { grid-template-columns: 1fr 1fr; }
   .tile.total { grid-column: 1 / -1; }
 }
@@ -233,6 +284,8 @@ footer code { font-family: Consolas, ui-monospace, monospace; font-size: 12px; }
   .split { display: block; }
   .appdetail { max-width: 220px; }
   td { padding: 8px 6px; }
+  .cmp-actions { margin-left: 0; }
+  .cmp-t th:nth-child(2), .cmp-t td:nth-child(2) { display: none; }
 }
 </style>
 </head>
@@ -253,11 +306,17 @@ footer code { font-family: Consolas, ui-monospace, monospace; font-size: 12px; }
     </div>
   </header>
 
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-overview" aria-selected="true" aria-controls="view-overview">Overview</button>
+    <button role="tab" id="tab-compare" aria-selected="false" aria-controls="view-compare">Compare periods</button>
+  </nav>
+
   <div class="banner" id="banner"></div>
   <div class="notice" id="stale" hidden></div>
   <div class="notice" id="update" hidden></div>
   <div class="notice" id="alerts" hidden></div>
 
+  <div id="view-overview" role="tabpanel" aria-labelledby="tab-overview">
   <section class="card limit" id="limit" hidden>
     <div class="limit-head">
       <h2>Data limit</h2>
@@ -314,6 +373,53 @@ footer code { font-family: Consolas, ui-monospace, monospace; font-size: 12px; }
       <tbody id="history"></tbody>
     </table></div>
   </section>
+  </div>
+
+  <div id="view-compare" role="tabpanel" aria-labelledby="tab-compare" hidden>
+    <section class="card">
+      <div class="cmp-controls">
+        <label>Compare <select id="cmpA" aria-label="Period to look at"></select></label>
+        <label>with <select id="cmpB" aria-label="Period to compare with"></select></label>
+        <div class="seg" id="cmpMode" role="group" aria-label="How much of each period">
+          <button data-mode="same" aria-pressed="true">Same number of days</button>
+          <button data-mode="whole" aria-pressed="false">Whole periods</button>
+        </div>
+        <div class="cmp-actions"><button id="cmpCopy">Copy summary</button></div>
+      </div>
+      <p class="hint" id="cmpNote" style="margin-top:10px"></p>
+    </section>
+
+    <section class="cmp-tiles" id="cmpTiles"></section>
+
+    <section class="card">
+      <div class="card-head"><h2>What changed</h2></div>
+      <ul class="insights" id="cmpInsights"></ul>
+    </section>
+
+    <section class="card" style="margin-top:12px">
+      <div class="card-head"><h2>Running total, day by day</h2><div class="legend" id="cmpLegend"></div></div>
+      <div class="chart" id="cmpChart"><div class="tip"></div></div>
+    </section>
+
+    <div class="cmp-stack">
+      <section class="card">
+        <div class="card-head"><h2>Apps</h2><div class="tools"><input type="search" id="cq" placeholder="Find an app" aria-label="Find an app"></div></div>
+        <div class="scroll"><table class="cmp-t">
+          <thead><tr><th>App</th><th id="cmpHB">Before</th><th id="cmpHA">Now</th><th>Change</th></tr></thead>
+          <tbody id="cmpApps"></tbody>
+        </table></div>
+        <button class="more" id="cmpMore"></button>
+      </section>
+      <section class="card">
+        <div class="card-head"><h2>Networks</h2></div>
+        <div class="scroll"><table class="cmp-n">
+          <thead><tr><th>Network</th><th id="cmpNB">Before</th><th id="cmpNA">Now</th><th>Change</th></tr></thead>
+          <tbody id="cmpNets"></tbody>
+        </table></div>
+        <p class="hint">Uses the networks ticked on the Overview tab.</p>
+      </section>
+    </div>
+  </div>
 
   <footer id="foot"></footer>
 </div>
@@ -381,7 +487,10 @@ const DATA = /*__DATA__*/null;
   const SETTINGS = DATA.settings || {};
 
   // ---- state
-  let startDay = Math.min(28, Math.max(1, store.get("startDay", SETTINGS.limit_enabled ? SETTINGS.cycle_start_day || 1 : 1)));
+  // the renewal day from NetUsage Settings wins whenever it changes; the dashboard's own picker overrides it until then
+  const settingsDay = SETTINGS.cycle_start_day || 1;
+  if (store.get("settingsDay", null) !== settingsDay) { store.set("settingsDay", settingsDay); store.set("startDay", settingsDay); }
+  let startDay = Math.min(28, Math.max(1, store.get("startDay", settingsDay)));
   const netOn = nets.map((n) => { const v = store.get("net." + n.key, null); return v === null ? n.default : !!v; });
   let sortKey = store.get("sort", "tot");
   let showAll = false;
@@ -516,6 +625,7 @@ const DATA = /*__DATA__*/null;
     renderHistory();
     renderLimit();
     renderApp();
+    if (view === "compare") renderCompare();
   }
 
   function setValue(id, b) { const [n, u] = fmt(b, true); $(id).innerHTML = esc(n) + "<small>" + u + "</small>"; }
@@ -779,14 +889,252 @@ const DATA = /*__DATA__*/null;
     }
   }
 
+  // ---- compare two periods
+  let view = "overview";
+  const cmp = { a: null, b: null, mode: null, showAll: false };
+  function setView(v) {
+    view = v;
+    $("view-overview").hidden = v !== "overview";
+    $("view-compare").hidden = v !== "compare";
+    $("tab-overview").setAttribute("aria-selected", String(v === "overview"));
+    $("tab-compare").setAttribute("aria-selected", String(v === "compare"));
+    ["prev", "period", "next"].forEach((id) => { $(id).style.visibility = v === "compare" ? "hidden" : ""; });
+    try { sessionStorage.setItem("netusage.view", v); } catch (e) {}
+    if (v === "compare") renderCompare();
+  }
+  const realPeriods = () => periods.filter((p) => !p.rolling && p.to >= firstDay);
+  const pct = (a, b) => (b > 0 ? (100 * (a - b)) / b : null);
+  function chgHtml(a, b, opts) {
+    const d = a - b, p = pct(a, b);
+    const tiny = Math.abs(d) < (opts && opts.minBytes || MB) || (p !== null && Math.abs(p) < 1);
+    const cls = tiny ? "same" : d > 0 ? "up" : "down";
+    const arrow = tiny ? "●" : d > 0 ? "▲" : "▼";
+    const showPct = p !== null && b >= 10 * MB;
+    const pctTxt = showPct ? (d > 0 ? "+" : "−") + Math.abs(p).toFixed(Math.abs(p) < 10 ? 1 : 0) + "%" : "";
+    const main = tiny ? "About the same" : (d > 0 ? "+" : "−") + fmt(Math.abs(d));
+    if (opts && opts.stack) return "<span class='chg " + cls + "'><span class='ar' aria-hidden='true'>" + arrow + "</span>" + esc(main) + "</span>" +
+      (!tiny && pctTxt ? "<div class='pct'>" + esc(pctTxt) + "</div>" : "");
+    return "<span class='chg " + cls + "'><span class='ar' aria-hidden='true'>" + arrow + "</span>" + esc(main + (!tiny && pctTxt ? " (" + pctTxt + ")" : "")) + "</span>";
+  }
+  function cmpRanges() {
+    const A = cmp.a, B = cmp.b;
+    const aTo = A.to > TODAY ? TODAY : A.to;
+    const aDays = Math.max(1, daysBetween(A.from, aTo));
+    const partial = A.to > TODAY;
+    const mode = partial ? (cmp.mode || "same") : "whole";
+    const bLen = daysBetween(B.from, B.to);
+    const bTo = mode === "same" ? (aDays >= bLen ? B.to : addDays(B.from, aDays - 1)) : (B.to > TODAY ? TODAY : B.to);
+    return { A, B, aFrom: A.from, aTo, bFrom: B.from, bTo, mode, partial, aDays, bDays: daysBetween(B.from, bTo) };
+  }
+  function shortLabel(p) {
+    if (startDay === 1) return MONTHS_LONG[toD(p.from).getUTCMonth()];
+    return nice(p.from) + " – " + nice(p.to);
+  }
+  function rangeLabel(p, from, to) {
+    const full = from === p.from && to === p.to;
+    return full ? shortLabel(p) : "the same days of " + shortLabel(p) + " (" + nice(from) + " – " + nice(to) + ")";
+  }
+  function renderCompare() {
+    const list = realPeriods();
+    if (list.length < 2) {
+      $("cmpNote").textContent = "Comparing needs at least two periods of history. NetUsage has recorded since " + nice(firstDay, true) + ".";
+      ["cmpTiles", "cmpInsights", "cmpApps", "cmpNets"].forEach((id) => { $(id).innerHTML = ""; });
+      $("cmpChart").querySelectorAll("svg").forEach((n) => n.remove());
+      return;
+    }
+    // defaults: the current period once a week of it has passed, otherwise the last finished one
+    if (!cmp.a || !list.some((p) => p.key === cmp.a.key)) {
+      const cur = list[0], curDays = daysBetween(cur.from, TODAY);
+      cmp.a = cur.to >= TODAY && curDays < 7 ? list[1] : cur;
+      cmp.b = null;
+    } else cmp.a = list.find((p) => p.key === cmp.a.key);
+    const ai = list.findIndex((p) => p.key === cmp.a.key);
+    if (!cmp.b || !list.some((p) => p.key === cmp.b.key) || cmp.b.key === cmp.a.key)
+      cmp.b = list[Math.min(ai + 1, list.length - 1)] === cmp.a ? list[Math.max(0, ai - 1)] : list[Math.min(ai + 1, list.length - 1)];
+    else cmp.b = list.find((p) => p.key === cmp.b.key);
+    const opt = (p, sel) => "<option value='" + esc(p.key) + "'" + (sel ? " selected" : "") + ">" + esc(p.label) + (p.to >= TODAY && p.from <= TODAY ? " (so far)" : "") + "</option>";
+    $("cmpA").innerHTML = list.map((p) => opt(p, p.key === cmp.a.key)).join("");
+    $("cmpB").innerHTML = list.filter((p) => p.key !== cmp.a.key).map((p) => opt(p, p.key === cmp.b.key)).join("");
+
+    const R = cmpRanges();
+    $("cmpMode").hidden = !R.partial;
+    $("cmpMode").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === R.mode)));
+    const A = aggregate(R.aFrom, R.aTo), B = aggregate(R.bFrom, R.bTo);
+    const la = rangeLabel(R.A, R.aFrom, R.aTo), lb = rangeLabel(R.B, R.bFrom, R.bTo);
+    const notes = [];
+    if (R.partial && R.mode === "same") notes.push("Comparing the first " + R.aDays + " day" + (R.aDays === 1 ? "" : "s") + " of each period, so a period that has only just started is compared fairly.");
+    if (R.partial && R.mode === "whole") notes.push(shortLabel(R.A) + " isn't over yet (" + R.aDays + " days so far), so its totals will keep growing.");
+    if (R.bFrom < firstDay) notes.push("NetUsage only started recording on " + nice(firstDay, true) + ", so " + shortLabel(R.B) + " is incomplete.");
+    if (!R.partial && R.aDays !== R.bDays) notes.push("The periods have different lengths (" + R.aDays + " and " + R.bDays + " days), so also look at the daily average.");
+    $("cmpNote").textContent = notes.join(" ");
+
+    // tiles
+    const ta = A.recv + A.sent, tb = B.recv + B.sent;
+    const tile = (label, a, b, sw) => "<div class='card tile'><div class='label'>" + (sw ? "<span class='swatch' style='background:" + sw + "'></span>" : "") + esc(label) + "</div>" +
+      "<div class='value'>" + (() => { const [n, u] = fmt(a, true); return esc(n) + "<small>" + u + "</small>"; })() + "</div>" +
+      "<div class='was'>" + esc(shortLabel(R.B)) + ": " + fmt(b) + "</div>" + chgHtml(a, b) + "</div>";
+    $("cmpTiles").innerHTML = tile("Download", A.recv, B.recv, "var(--down)") + tile("Upload", A.sent, B.sent, "var(--up)") +
+      tile("Total", ta, tb) + tile("Average per day", ta / R.aDays, tb / Math.max(1, R.bDays));
+    $("cmpHA").textContent = shortLabel(R.A); $("cmpHB").textContent = shortLabel(R.B);
+    $("cmpNA").textContent = shortLabel(R.A); $("cmpNB").textContent = shortLabel(R.B);
+
+    // per-app changes
+    const names = new Set([...A.perApp.keys(), ...B.perApp.keys()]);
+    const rowsC = [];
+    names.forEach((nm) => {
+      const x = A.perApp.get(nm), y = B.perApp.get(nm);
+      const a = x ? x.recv + x.sent : 0, b = y ? y.recv + y.sent : 0;
+      if (a < 1024 * 1024 && b < 1024 * 1024) return;
+      rowsC.push({ name: nm, a, b, d: a - b, detail: Array.from(new Set([...(x ? x.detail : []), ...(y ? y.detail : [])])).join(" · ") });
+    });
+    rowsC.sort((p, q) => Math.abs(q.d) - Math.abs(p.d));
+    const q = $("cq").value.trim().toLowerCase();
+    const shown = rowsC.filter((r) => !q || (r.name + " " + r.detail).toLowerCase().includes(q));
+    const maxD = rowsC.reduce((m, r) => Math.max(m, Math.abs(r.d)), 0) || 1;
+    const LIM = 15, vis = cmp.showAll || q ? shown : shown.slice(0, LIM);
+    $("cmpApps").innerHTML = vis.length ? vis.map((r) => {
+      const tag = r.b < 10 * MB && r.a >= 100 * MB ? "<span class='pill'>New</span>" : r.a < 10 * MB && r.b >= 100 * MB ? "<span class='pill'>Not used</span>" : "";
+      const w = (50 * Math.abs(r.d) / maxD).toFixed(2);
+      return "<tr class='app' tabindex='0' data-name='" + esc(r.name) + "'><td><div class='appname'>" + esc(r.name) + tag + "</div><div class='appdetail'>" + esc(r.detail) + "</div></td>" +
+        "<td>" + fmt(r.b) + "</td><td>" + fmt(r.a) + "</td><td class='chgcell'>" + chgHtml(r.a, r.b, { stack: true }) +
+        "<div class='dbar'>" + (Math.abs(r.d) >= MB ? "<i class='" + (r.d > 0 ? "inc" : "dec") + "' style='width:" + w + "%'></i>" : "") + "</div></td></tr>";
+    }).join("") : "<tr><td colspan='4' class='empty'>" + (q ? "No app matches “" + esc(q) + "”." : "No traffic in these periods.") + "</td></tr>";
+    $("cmpApps").querySelectorAll("tr.app").forEach((tr) => {
+      tr.onclick = () => openApp(tr.dataset.name);
+      tr.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openApp(tr.dataset.name); } };
+    });
+    const mb = $("cmpMore");
+    mb.style.display = !q && shown.length > LIM ? "" : "none";
+    mb.textContent = cmp.showAll ? "Show the top " + LIM + " changes only" : "Show all " + shown.length + " apps";
+
+    // networks
+    const netRows = nets.map((n, i) => ({ n, i, a: (A.perNet.get(i) || [0, 0]).reduce((x, y) => x + y, 0), b: (B.perNet.get(i) || [0, 0]).reduce((x, y) => x + y, 0) }))
+      .filter((r) => netOn[r.i] && (r.a > 0 || r.b > 0)).sort((x, y) => (y.a + y.b) - (x.a + x.b));
+    $("cmpNets").innerHTML = netRows.map((r) => "<tr><td><div class='appname'>" + esc(r.n.label) + "</div><div class='appdetail'>" + esc(r.n.kind) + "</div></td><td>" + fmt(r.b) + "</td><td>" + fmt(r.a) + "</td><td class='chgcell'>" + chgHtml(r.a, r.b, { stack: true }) + "</td></tr>").join("") ||
+      "<tr><td colspan='4' class='empty'>No traffic.</td></tr>";
+
+    // insights
+    const ins = [];
+    const pT = pct(ta, tb);
+    if (tb > 0) {
+      const same = Math.abs(ta - tb) < 256 * MB || Math.abs(pT) < 3;
+      ins.push({ c: same ? "" : ta > tb ? "up" : "down", t: same ? "About the same as in " + esc(lb) + ": " + fmt(ta) + " vs " + fmt(tb) + "."
+        : "You used <b>" + fmt(Math.abs(ta - tb)) + " " + (ta > tb ? "more" : "less") + "</b> (" + (ta > tb ? "+" : "−") + Math.abs(pT).toFixed(0) + "%) than in " + esc(lb) + ": " + fmt(ta) + " vs " + fmt(tb) + "." });
+    }
+    const ups = rowsC.filter((r) => r.d >= 256 * MB).sort((x, y) => y.d - x.d).slice(0, 3);
+    const downs = rowsC.filter((r) => r.d <= -256 * MB).sort((x, y) => x.d - y.d).slice(0, 3);
+    if (ups.length) {
+      let t = "Biggest increase" + (ups.length > 1 ? "s" : "") + ": " + ups.map((r) => "<b>" + esc(r.name) + "</b> +" + fmt(r.d)).join(", ") + ".";
+      const diff = ta - tb;
+      if (diff >= 256 * MB && ups[0].d <= diff && ups[0].d / diff >= 0.5)
+        t += " " + esc(ups[0].name) + " alone accounts for " + Math.round(100 * ups[0].d / diff) + "% of the increase.";
+      else if (ups[0].d - diff >= GB)
+        t += " Without " + esc(ups[0].name) + ", you'd have used " + fmt(ups[0].d - diff) + " less than " + esc(shortLabel(R.B)) + ".";
+      ins.push({ c: "up", t });
+    }
+    if (downs.length) {
+      let t = "Biggest drop" + (downs.length > 1 ? "s" : "") + ": " + downs.map((r) => "<b>" + esc(r.name) + "</b> −" + fmt(-r.d)).join(", ") + ".";
+      const fall = tb - ta;
+      if (fall >= 256 * MB && -downs[0].d <= fall && -downs[0].d / fall >= 0.5)
+        t += " " + esc(downs[0].name) + " alone accounts for " + Math.round(100 * -downs[0].d / fall) + "% of the drop.";
+      ins.push({ c: "down", t });
+    }
+    const fresh = rowsC.filter((r) => r.b < 10 * MB && r.a >= 100 * MB).sort((x, y) => y.a - x.a).slice(0, 3);
+    if (fresh.length) ins.push({ c: "up", t: "New in " + esc(shortLabel(R.A)) + ": " + fresh.map((r) => "<b>" + esc(r.name) + "</b> (" + fmt(r.a) + ")").join(", ") + "." });
+    const gone = rowsC.filter((r) => r.a < 10 * MB && r.b >= 100 * MB).sort((x, y) => y.b - x.b).slice(0, 3);
+    if (gone.length) ins.push({ c: "down", t: "Hardly used in " + esc(shortLabel(R.A)) + ": " + gone.map((r) => "<b>" + esc(r.name) + "</b> (was " + fmt(r.b) + ")").join(", ") + "." });
+    const upA = pct(A.sent, B.sent), dnA = pct(A.recv, B.recv);
+    if (upA !== null && dnA !== null && A.sent > GB && Math.abs(upA - dnA) >= 25)
+      ins.push({ c: upA > dnA ? "up" : "", t: "Upload changed " + (upA > dnA ? "faster" : "slower") + " than download (" + (upA >= 0 ? "+" : "−") + Math.abs(upA).toFixed(0) + "% vs " + (dnA >= 0 ? "+" : "−") + Math.abs(dnA).toFixed(0) + "%)." });
+    const busiest = (agg) => { let m = null; agg.perDay.forEach((v, d) => { if (!m || v[0] + v[1] > m[1]) m = [d, v[0] + v[1]]; }); return m; };
+    const bA = busiest(A), bB = busiest(B);
+    if (bA && bB) ins.push({ c: "", t: "Busiest day: " + esc(nice(bA[0])) + " (" + fmt(bA[1]) + "), compared with " + esc(nice(bB[0])) + " (" + fmt(bB[1]) + ") in " + esc(shortLabel(R.B)) + "." });
+    if (netRows.length > 1 && ta > 0 && tb > 0) {
+      const top = netRows.map((r) => ({ r, sa: r.a / ta, sb: r.b / tb })).sort((x, y) => Math.abs(y.sa - y.sb) - Math.abs(x.sa - x.sb))[0];
+      if (Math.abs(top.sa - top.sb) >= 0.1)
+        ins.push({ c: "", t: (top.sa > top.sb ? "More" : "Less") + " of your usage was on <b>" + esc(top.r.n.label) + "</b>: " + Math.round(100 * top.sa) + "% vs " + Math.round(100 * top.sb) + "%." });
+    }
+    if (!ins.length) ins.push({ c: "", t: "No usage recorded in these periods yet." });
+    $("cmpInsights").innerHTML = ins.map((x) => "<li class='" + x.c + "'>" + x.t + "</li>").join("");
+    cmp.text = shortLabel(R.A) + " vs " + shortLabel(R.B) + (R.partial && R.mode === "same" ? " (first " + R.aDays + " days)" : "") + "\n" +
+      "Download " + fmt(A.recv) + " (was " + fmt(B.recv) + ") · Upload " + fmt(A.sent) + " (was " + fmt(B.sent) + ") · Total " + fmt(ta) + " (was " + fmt(tb) + ")\n" +
+      ins.map((x) => "• " + x.t.replace(/<[^>]+>/g, "")).join("\n");
+
+    drawRunning(R, A, B);
+  }
+  function drawRunning(R, A, B) {
+    const host = $("cmpChart"), tip = host.querySelector(".tip");
+    host.querySelectorAll("svg").forEach((n) => n.remove());
+    const series = (agg, from, n) => { const out = []; let c = 0; for (let i = 0; i < n; i++) { const d = addDays(from, i); const v = agg.perDay.get(d); c += v ? v[0] + v[1] : 0; out.push(c); } return out; };
+    const sa = series(A, R.aFrom, R.aDays), sb = series(B, R.bFrom, R.bDays);
+    const n = Math.max(sa.length, sb.length);
+    const W = Math.max(300, host.clientWidth || 800), H = 240, padL = 52, padR = 70, padT = 10, padB = 24;
+    const iw = W - padL - padR, ih = H - padT - padB;
+    const top = niceMax(Math.max(sa[sa.length - 1] || 0, sb[sb.length - 1] || 0));
+    const x = (i) => padL + (n <= 1 ? iw / 2 : (iw * i) / (n - 1)), y = (v) => padT + ih - (v / top) * ih;
+    let svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " + W + " " + H + "' style='height:" + H + "px' role='img' aria-label='Running total of both periods'><g class='axis'>";
+    for (let i = 0; i <= 4; i++) {
+      const v = (top / 4) * i, yy = y(v);
+      if (i > 0) svg += "<line class='gridline' x1='" + padL + "' x2='" + (W - padR) + "' y1='" + yy + "' y2='" + yy + "'/>";
+      svg += "<text x='" + (padL - 8) + "' y='" + (yy + 4) + "' text-anchor='end'>" + (i === 0 ? "0" : esc(fmt(v))) + "</text>";
+    }
+    const every = Math.max(1, Math.ceil(26 / (iw / Math.max(1, n - 1))));
+    for (let i = 0; i < n; i += every) svg += "<text x='" + x(i) + "' y='" + (H - 6) + "' text-anchor='middle'>" + (i + 1) + "</text>";
+    svg += "</g><line class='baseline' x1='" + padL + "' x2='" + (W - padR) + "' y1='" + (padT + ih) + "' y2='" + (padT + ih) + "'/>";
+    const path = (arr) => arr.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + "," + y(v).toFixed(1)).join("");
+    svg += "<path class='line' d='" + path(sb) + "' stroke='var(--prev)'/>";
+    svg += "<path class='line' d='" + path(sa) + "' stroke='var(--accent)'/>";
+    const end = (arr, color, label) => { if (!arr.length) return ""; const i = arr.length - 1; return "<circle cx='" + x(i) + "' cy='" + y(arr[i]) + "' r='4' fill='" + color + "' stroke='var(--surface)' stroke-width='2'/>" +
+      "<text class='endlbl' x='" + (x(i) + 8) + "' y='" + (y(arr[i]) + 4) + "'>" + esc(label) + "</text>"; };
+    const ya = sa.length ? y(sa[sa.length - 1]) : 0, yb = sb.length ? y(sb[sb.length - 1]) : 0;
+    const clash = Math.abs(ya - yb) < 14 && Math.abs(sa.length - sb.length) < 3;
+    svg += end(sb, "var(--prev)", clash ? "" : shortLabel(R.B).split(" ")[0]) + end(sa, "var(--accent)", shortLabel(R.A).split(" ")[0]);
+    svg += "<line class='cross' id='cmpCross' x1='0' x2='0' y1='" + padT + "' y2='" + (padT + ih) + "' visibility='hidden'/>";
+    svg += "<rect x='" + padL + "' y='" + padT + "' width='" + iw + "' height='" + ih + "' fill='transparent' id='cmpHit'/></svg>";
+    host.insertAdjacentHTML("afterbegin", svg);
+    $("cmpLegend").innerHTML = "<span><i class='ln' style='background:var(--accent)'></i>" + esc(shortLabel(R.A)) + "</span><span><i class='ln' style='background:var(--prev)'></i>" + esc(shortLabel(R.B)) + "</span>";
+    const hit = $("cmpHit"), cross = $("cmpCross"), svgEl = host.querySelector("svg");
+    hit.addEventListener("mousemove", (ev) => {
+      const r = svgEl.getBoundingClientRect(), px = (ev.clientX - r.left) * (W / r.width);
+      const i = Math.max(0, Math.min(n - 1, Math.round(n <= 1 ? 0 : ((px - padL) / iw) * (n - 1))));
+      cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
+      const va = sa[i], vb = sb[i];
+      tip.innerHTML = "<div class='t'>Day " + (i + 1) + "</div>" +
+        "<div class='r'><i class='ln' style='background:var(--accent)'></i>" + esc(shortLabel(R.A)) + (va !== undefined ? " (" + esc(nice(addDays(R.aFrom, i))) + ")<b>" + fmt(va) + "</b>" : "<b>—</b>") + "</div>" +
+        "<div class='r'><i class='ln' style='background:var(--prev)'></i>" + esc(shortLabel(R.B)) + (vb !== undefined ? " (" + esc(nice(addDays(R.bFrom, i))) + ")<b>" + fmt(vb) + "</b>" : "<b>—</b>") + "</div>" +
+        (va !== undefined && vb !== undefined ? "<div class='r'>Difference<b>" + (va >= vb ? "+" : "−") + fmt(Math.abs(va - vb)) + "</b></div>" : "");
+      tip.style.display = "block";
+      const box = host.getBoundingClientRect();
+      let left = ev.clientX - box.left + 14;
+      if (left + tip.offsetWidth > box.width) left = ev.clientX - box.left - tip.offsetWidth - 14;
+      tip.style.left = Math.max(0, left) + "px";
+      tip.style.top = Math.max(0, ev.clientY - box.top - tip.offsetHeight - 10) + "px";
+    });
+    hit.addEventListener("mouseleave", () => { tip.style.display = "none"; cross.setAttribute("visibility", "hidden"); });
+  }
+  function copyText(t) {
+    const done = () => { const b = $("cmpCopy"); b.textContent = "Copied ✓"; setTimeout(() => { b.textContent = "Copy summary"; }, 1600); };
+    const fallback = () => { const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) {} ta.remove(); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
+  }
+
   // ---- wire up
+  $("tab-overview").onclick = () => setView("overview");
+  $("tab-compare").onclick = () => setView("compare");
+  $("cmpA").onchange = () => { cmp.a = realPeriods().find((p) => p.key === $("cmpA").value); cmp.b = null; renderCompare(); };
+  $("cmpB").onchange = () => { cmp.b = realPeriods().find((p) => p.key === $("cmpB").value); renderCompare(); };
+  $("cmpMode").querySelectorAll("button").forEach((b) => b.onclick = () => { cmp.mode = b.dataset.mode; renderCompare(); });
+  $("cq").oninput = () => renderCompare();
+  $("cmpMore").onclick = () => { cmp.showAll = !cmp.showAll; renderCompare(); };
+  $("cmpCopy").onclick = () => { if (cmp.text) copyText(cmp.text); };
   $("dlgClose").onclick = closeApp;
   $("appdlg").addEventListener("click", (e) => { if (e.target === $("appdlg")) closeApp(); });
   $("appdlg").addEventListener("close", () => { dlgApp = null; });
   document.querySelectorAll("th.sortable").forEach((th) => th.onclick = () => { sortKey = th.dataset.k; store.set("sort", sortKey); render(); });
   $("q").oninput = () => renderApps(aggregate(periods[current].from, periods[current].to));
   $("more").onclick = () => { showAll = !showAll; renderApps(aggregate(periods[current].from, periods[current].to)); };
-  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { const p = periods[current]; renderChart(p, aggregate(p.from, p.to)); renderApp(); }, 120); });
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { const p = periods[current]; renderChart(p, aggregate(p.from, p.to)); renderApp(); if (view === "compare") renderCompare(); }, 120); });
 
   // Reload by itself once the hourly task has had a chance to rebuild the page - but never
   // while you're using it (dialog open, or clicked/typed in the last 5 minutes).
@@ -814,6 +1162,10 @@ const DATA = /*__DATA__*/null;
   renderNotices();
   fillControls();
   rebuildPeriods();
+  let startView = "overview";
+  try { startView = sessionStorage.getItem("netusage.view") || "overview"; } catch (e) {}
+  if (location.hash === "#compare") startView = "compare";
+  setView(startView === "compare" ? "compare" : "overview");
 })();
 // @license-end
 </script>

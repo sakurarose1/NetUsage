@@ -69,7 +69,7 @@ import subprocess
 import tempfile
 import time
 
-VERSION = "1.3"
+VERSION = "1.4"
 SOURCE_URL = "https://github.com/sakurarose1/NetUsage"
 RELEASES_API = "https://api.github.com/repos/sakurarose1/NetUsage/releases/latest"
 RELEASES_PAGE = SOURCE_URL + "/releases/latest"
@@ -118,7 +118,8 @@ DEFAULT_SETTINGS = {
     "limit_gb": 100.0,
     "limit_count": "both",      # "both" = download + upload, "download" = download only
     "limit_warn_percent": 80,
-    "cycle_start_day": 1,       # the day the monthly limit resets
+    "cycle_start_day": 1,       # the day the internet package renews (periods + limit reset)
+    "renewal_summary": True,    # when a new period starts, summarise the one that just ended
 }
 
 NO_WINDOW = 0x08000000 if IS_WINDOWS else 0
@@ -223,7 +224,7 @@ def clean_settings(raw):
     out = dict(DEFAULT_SETTINGS)
     if not isinstance(raw, dict):
         return out
-    for k in ("notifications", "update_check", "spike_alerts", "limit_enabled"):
+    for k in ("notifications", "update_check", "spike_alerts", "limit_enabled", "renewal_summary"):
         if isinstance(raw.get(k), bool):
             out[k] = raw[k]
 
@@ -804,12 +805,76 @@ def compute_alerts(d, settings, latest, today=None):
                         "title": title,
                         "body": "%s used so far. The limit resets on %s." % (fmt_gb(used), resets)})
 
+    if settings["renewal_summary"] and days:
+        a = renewal_summary(d, settings, today)
+        if a:
+            out.append(a)
+
     if settings["update_check"] and latest and is_newer(latest.get("version")):
         out.append({"id": "update:%s" % latest["version"], "kind": "update",
                     "title": "NetUsage %s is available" % latest["version"],
                     "body": "You have %s. Click to open the download page." % VERSION,
                     "url": latest.get("url") or RELEASES_PAGE})
     return out
+
+
+def period_totals(d, start, end):
+    """Total and per-app bytes (download + upload) on the default networks between two dates."""
+    physical = {i for i, n in enumerate(d["nets"]) if n["default"]}
+    lo, hi = start.isoformat(), end.isoformat()
+    total, per_app = 0, {}
+    for di, a, n, recv, sent in d["rows"]:
+        if n in physical and lo <= d["days"][di] <= hi:
+            total += recv + sent
+            if a != d["other"]:
+                name = d["apps"][a][0]
+                per_app[name] = per_app.get(name, 0) + recv + sent
+    return total, per_app
+
+
+def renewal_summary(d, settings, today):
+    """In the first 3 days of a new period: how the period that just ended compares with
+    the one before it, and which app changed the most."""
+    start, _ = cycle_for(today, settings["cycle_start_day"])
+    if (today - start).days > 2:
+        return None
+    first = dt.date.fromisoformat(d["days"][0])
+    last_end = start - dt.timedelta(days=1)
+    last_start, _ = cycle_for(last_end, settings["cycle_start_day"])
+    if last_end < first:
+        return None                       # nothing recorded in the period that just ended
+    used, apps_last = period_totals(d, last_start, last_end)
+    label = "%s – %s" % (nice_date(last_start), nice_date(last_end))
+    if last_start < first:
+        label += " (recorded from %s)" % nice_date(first)
+    title = "Your last period used %s" % fmt_gb(used)
+    prev_end = last_start - dt.timedelta(days=1)
+    prev_start, _ = cycle_for(prev_end, settings["cycle_start_day"])
+    if prev_start >= first:               # only compare with a fully recorded period
+        before, apps_prev = period_totals(d, prev_start, prev_end)
+        if before > 0:
+            pct = 100.0 * (used - before) / before
+            trend = ("about the same as" if abs(pct) < 3 else
+                     "%d%% more than" % round(pct) if pct > 0 else "%d%% less than" % round(-pct))
+            body = "%s: %s the period before (%s)." % (label, trend, fmt_gb(before))
+            changes = sorted(((apps_last.get(k, 0) - apps_prev.get(k, 0), k)
+                              for k in set(apps_last) | set(apps_prev)), reverse=True)
+            up = changes[0] if changes and changes[0][0] >= 256 * 1024 ** 2 else None
+            down = changes[-1] if changes and changes[-1][0] <= -256 * 1024 ** 2 else None
+            # name the change that goes the same way as the total
+            first_choice, second = (up, down) if used >= before else (down, up)
+            pick = first_choice or second
+            if pick and pick[0] > 0:
+                body += " Biggest increase: %s (+%s)." % (pick[1], fmt_gb(pick[0]))
+            elif pick:
+                body += " Biggest drop: %s (−%s)." % (pick[1], fmt_gb(-pick[0]))
+        else:
+            body = "%s." % label
+    else:
+        top = max(apps_last.items(), key=lambda kv: kv[1]) if apps_last else None
+        body = "%s.%s" % (label, " Most used: %s (%s)." % (top[0], fmt_gb(top[1])) if top else "")
+    return {"id": "renewal:%s" % start.isoformat(), "kind": "renewal", "title": title,
+            "body": body + " Click to compare.", "url": DASH_URL + "#compare"}
 
 
 def record_alerts(current):
@@ -1068,6 +1133,7 @@ def cmd_settings(args):
     v_count = tk.StringVar(value="Download + upload" if s["limit_count"] == "both" else "Download only")
     v_warn = tk.StringVar(value=str(s["limit_warn_percent"]))
     v_day = tk.StringVar(value=str(s["cycle_start_day"]))
+    v_renew = tk.BooleanVar(value=s["renewal_summary"])
     status = tk.StringVar(value="")
 
     def heading(row, text):
@@ -1077,24 +1143,34 @@ def cmd_settings(args):
         ttk.Label(frm, text=text, foreground="#666", wraplength=420, justify="left").grid(
             row=row, column=0, columnspan=4, sticky="w", padx=34, pady=(0, 4))
 
-    heading(0, "Notifications")
-    ttk.Checkbutton(frm, text="Show Windows notifications for the alerts below", variable=v_notify).grid(row=1, column=0, columnspan=4, sticky="w", **pad)
+    heading(0, "Your internet package")
+    pk = ttk.Frame(frm)
+    pk.grid(row=1, column=0, columnspan=4, sticky="w", padx=14, pady=4)
+    ttk.Label(pk, text="It renews on day").pack(side="left")
+    e_day = ttk.Spinbox(pk, from_=1, to=28, increment=1, width=5, textvariable=v_day)
+    e_day.pack(side="left", padx=6)
+    ttk.Label(pk, text="of each month (the dashboard's periods and the data limit start on this day)").pack(side="left")
+    ttk.Checkbutton(frm, text="When a new period starts, send me a summary compared with the one before",
+                    variable=v_renew).grid(row=2, column=0, columnspan=4, sticky="w", **pad)
 
-    heading(2, "Spike alerts")
-    ttk.Checkbutton(frm, text="Tell me when an app uses far more data than usual", variable=v_spike).grid(row=3, column=0, columnspan=4, sticky="w", **pad)
+    heading(3, "Notifications")
+    ttk.Checkbutton(frm, text="Show Windows notifications for the alerts below", variable=v_notify).grid(row=4, column=0, columnspan=4, sticky="w", **pad)
+
+    heading(5, "Spike alerts")
+    ttk.Checkbutton(frm, text="Tell me when an app uses far more data than usual", variable=v_spike).grid(row=6, column=0, columnspan=4, sticky="w", **pad)
     sp = ttk.Frame(frm)
-    sp.grid(row=4, column=0, columnspan=4, sticky="w", padx=34)
+    sp.grid(row=7, column=0, columnspan=4, sticky="w", padx=34)
     ttk.Label(sp, text="Only when it uses at least").pack(side="left")
     e_spike = ttk.Spinbox(sp, from_=0.5, to=100, increment=0.5, width=6, textvariable=v_spike_gb)
     e_spike.pack(side="left", padx=6)
     ttk.Label(sp, text="GB in one day").pack(side="left")
-    note(5, "An alert fires when an app's usage today is at least this much AND more than "
+    note(8, "An alert fires when an app's usage today is at least this much AND more than "
             "3 times what it normally uses in a day - so your usual heavy apps won't keep alerting.")
 
-    heading(6, "Monthly data limit")
-    ttk.Checkbutton(frm, text="I have a monthly data limit", variable=v_limit).grid(row=7, column=0, columnspan=4, sticky="w", **pad)
+    heading(9, "Monthly data limit")
+    ttk.Checkbutton(frm, text="I have a monthly data limit", variable=v_limit).grid(row=10, column=0, columnspan=4, sticky="w", **pad)
     lim = ttk.Frame(frm)
-    lim.grid(row=8, column=0, columnspan=4, sticky="w", padx=34)
+    lim.grid(row=11, column=0, columnspan=4, sticky="w", padx=34)
     ttk.Label(lim, text="Limit").grid(row=0, column=0, sticky="w", pady=3)
     e_gb = ttk.Spinbox(lim, from_=1, to=100000, increment=10, width=8, textvariable=v_limit_gb)
     e_gb.grid(row=0, column=1, sticky="w", padx=6)
@@ -1103,22 +1179,18 @@ def cmd_settings(args):
     e_count = ttk.Combobox(lim, textvariable=v_count, state="readonly", width=18,
                            values=["Download + upload", "Download only"])
     e_count.grid(row=1, column=1, columnspan=2, sticky="w", padx=6)
-    ttk.Label(lim, text="Resets on day").grid(row=2, column=0, sticky="w", pady=3)
-    e_day = ttk.Spinbox(lim, from_=1, to=28, increment=1, width=5, textvariable=v_day)
-    e_day.grid(row=2, column=1, sticky="w", padx=6)
-    ttk.Label(lim, text="of each month").grid(row=2, column=2, sticky="w")
-    ttk.Label(lim, text="Warn me at").grid(row=3, column=0, sticky="w", pady=3)
+    ttk.Label(lim, text="Warn me at").grid(row=2, column=0, sticky="w", pady=3)
     e_warn = ttk.Spinbox(lim, from_=10, to=99, increment=5, width=5, textvariable=v_warn)
-    e_warn.grid(row=3, column=1, sticky="w", padx=6)
-    ttk.Label(lim, text="% and again at 100%").grid(row=3, column=2, sticky="w")
+    e_warn.grid(row=2, column=1, sticky="w", padx=6)
+    ttk.Label(lim, text="% and again at 100%").grid(row=2, column=2, sticky="w")
 
-    heading(9, "Updates")
-    ttk.Checkbutton(frm, text="Check for new versions of NetUsage once a day", variable=v_update).grid(row=10, column=0, columnspan=4, sticky="w", **pad)
-    note(11, "Asks github.com/sakurarose1/NetUsage for the latest release. Nothing about your usage is sent.")
+    heading(12, "Updates")
+    ttk.Checkbutton(frm, text="Check for new versions of NetUsage once a day", variable=v_update).grid(row=13, column=0, columnspan=4, sticky="w", **pad)
+    note(14, "Asks github.com/sakurarose1/NetUsage for the latest release. Nothing about your usage is sent.")
 
     def sync_state(*_):
         e_spike.state(["!disabled"] if v_spike.get() else ["disabled"])
-        for w in (e_gb, e_day, e_warn):
+        for w in (e_gb, e_warn):
             w.state(["!disabled"] if v_limit.get() else ["disabled"])
         e_count.state(["!disabled", "readonly"] if v_limit.get() else ["disabled"])
     v_spike.trace_add("write", sync_state)
@@ -1137,7 +1209,8 @@ def cmd_settings(args):
             "limit_enabled": v_limit.get(), "limit_gb": f(v_limit_gb, "the data limit"),
             "limit_count": "both" if v_count.get().startswith("Download +") else "download",
             "limit_warn_percent": int(f(v_warn, "the warning level")),
-            "cycle_start_day": int(f(v_day, "the reset day")),
+            "cycle_start_day": int(f(v_day, "the renewal day")),
+            "renewal_summary": v_renew.get(),
         })
 
     def save():
@@ -1209,15 +1282,15 @@ def cmd_settings(args):
                    else "The update failed. Details are in collector.log.")
 
     btns = ttk.Frame(frm)
-    btns.grid(row=12, column=0, columnspan=4, sticky="ew", padx=14, pady=(14, 4))
+    btns.grid(row=15, column=0, columnspan=4, sticky="ew", padx=14, pady=(14, 4))
     ttk.Button(btns, text="Send test notification", command=test).pack(side="left")
     ttk.Button(btns, text="Check for updates now", command=check_now).pack(side="left", padx=6)
     ttk.Button(btns, text="Update numbers now", command=update_now).pack(side="left")
     ttk.Button(btns, text="Save and close", command=lambda: save() and root.after(400, root.destroy)).pack(side="right")
     ttk.Button(btns, text="Save", command=save).pack(side="right", padx=6)
-    ttk.Label(frm, textvariable=status, foreground="#2a78d6").grid(row=13, column=0, columnspan=4, sticky="w", padx=14, pady=(2, 6))
+    ttk.Label(frm, textvariable=status, foreground="#2a78d6").grid(row=16, column=0, columnspan=4, sticky="w", padx=14, pady=(2, 6))
     ttk.Label(frm, text="NetUsage %s · free software (GNU AGPL v3 or later)" % VERSION, foreground="#888").grid(
-        row=14, column=0, columnspan=4, sticky="w", padx=14, pady=(0, 4))
+        row=17, column=0, columnspan=4, sticky="w", padx=14, pady=(0, 4))
     root.mainloop()
     return 0
 
